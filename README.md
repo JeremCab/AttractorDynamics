@@ -1,6 +1,6 @@
 # Attractor Dynamics of Boolean Neural Networks
 
-<img src="https://github.com/JeremCab/AttractorDynamics/blob/main/image.pdf" width="75%"/>
+<img src="https://github.com/JeremCab/AttractorDynamics/blob/main/image.png" width="75%"/>
 
 ## Abstract
 

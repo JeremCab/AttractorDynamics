@@ -10,11 +10,9 @@ import pickle
 import csv
 from tqdm import tqdm
 
-from BGT_network import *
-from RNN_simulator import *
-from network import *
-from attractors import *
-
+from source.bgt_network import *
+from source.network import *
+from source.attractors import *
 
 # ********** #
 # Parameters #
@@ -65,9 +63,9 @@ def initialize_simulation():
     # Initialize results storage
     cycles_list = [n]
 
-    # Write initial simulation parameters to the output file
-    with open(output_file, "w") as f:
-        f.write(f"{memory_length}, {n}, {n}, {n}, {eta_in}\n")
+    # Write initial simulation parameters to the output file # XXX fix this!!!
+    # with open(output_file, "w") as f:
+    #     f.write(f"{memory_length}, {n}, {n}, {n}, {eta_in}\n")
 
     return M, A_default, cycles_list
 
@@ -152,9 +150,9 @@ def run_simulation(U, tics, M, A_default, cycles_list):
         if verbose:
             print(current_input, M[4], M[0], M[1], cycles_list, eta)
 
-        # Write results to file
-        with open(output_file, "a") as f:
-            f.write(f"{memory_length}, {n}, {min_cycles}, {max_cycles}, {eta}\n")
+        # Write results to file # XXX fit this
+        # with open(output_file, "a") as f:
+        #     f.write(f"{memory_length}, {n}, {min_cycles}, {max_cycles}, {eta}\n")
 
 
 if __name__ == "__main__":
@@ -163,5 +161,5 @@ if __name__ == "__main__":
 
     # Generate input and run simulation
     U, tics = generate_input(input_dim=input_dim, input_size=input_size,
-                             nb_triggers=nb_triggers, trigger_length=trigger_length)
+                                nb_triggers=nb_triggers, trigger_length=trigger_length)
     run_simulation(U, tics, M, A_default, cycles_list)

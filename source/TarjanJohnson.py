@@ -180,5 +180,5 @@ def get_elementary_cycles(graph):
 	#returns all elementary cycles in a graph
 	return tuple(chain.from_iterable(grab_cycles(get_subgraph(graph, scc)) for scc in SCC(graph)))
 
-
-
+if __name__ == "__main__":
+	pass

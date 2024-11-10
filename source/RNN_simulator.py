@@ -136,31 +136,31 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
 # Example Usage and Tests #
 # *********************** #
 
-# Uncomment below for testing
+if __name__ == "__main__":
 
-# # Run STDP for multiple steps to observe weight updates
-# A = np.array([[0, 0.5, 0, 0, 0], [0, 0.5, 0, 0, 2.7], [0, 0.5, 0, 0, 0], [0, 0, -0.5, 0, 0], [0, 0, 0, 0, 0]])
-# A_default = np.copy(A)  # Immutable copy of A for bounding in STDP
-# x_tminus1 = np.array([[1], [0], [1], [0], [1]])
-# x_t = np.array([[0], [1], [0], [1], [0]])
+    # Run STDP for multiple steps to observe weight updates
+    A = np.array([[0, 0.5, 0, 0, 0], [0, 0.5, 0, 0, 2.7], [0, 0.5, 0, 0, 0], [0, 0, -0.5, 0, 0], [0, 0, 0, 0, 0]])
+    A_default = np.copy(A)  # Immutable copy of A for bounding in STDP
+    x_tminus1 = np.array([[1], [0], [1], [0], [1]])
+    x_t = np.array([[0], [1], [0], [1], [0]])
 
-# for i in range(60):
-#     A = STDP(A, x_tminus1, x_t, A_default)
-#     print("Step", i, "\n", A)
+    for i in range(60):
+        A = STDP(A, x_tminus1, x_t, A_default)
+        print("Step", i, "\n", A)
 
-# Run simulation with STDP enabled
-# A_initial = np.array([[0, 0.5, 0.5], [0, 0.3, 0], [0.2, 0, 0]])
-# B1 = np.array([[0.5, 0, 0], [0, 0, 0.5]])
-# B2 = np.array([[0, 0], [1, 0], [0, 0]])
-# b = np.array([[0.5], [0.5], [0]])
-# x = np.zeros([3, 1])
-# # U = random_input(dim=2, length=100)
-# U = {t: np.random.randint(2, size=(2, 1)) for t in range(100)}
+    # Run simulation with STDP enabled
+    A_initial = np.array([[0, 0.5, 0.5], [0, 0.3, 0], [0.2, 0, 0]])
+    B1 = np.array([[0.5, 0, 0], [0, 0, 0.5]])
+    B2 = np.array([[0, 0], [1, 0], [0, 0]])
+    b = np.array([[0.5], [0.5], [0]])
+    x = np.zeros([3, 1])
+    # U = random_input(dim=2, length=100)
+    U = {t: np.random.randint(2, size=(2, 1)) for t in range(100)}
 
-# history, synapses, matrices = simulation(A_initial, B1, B2, b, x, U, epoch=15, stdp=[A_initial, 0.1, 1, (-0.5, 0.5)])
-# print(history)
-# print(synapses)
-# print(matrices[0])
-# print(matrices[1])
-# print(matrices[2])
-# print(matrices[3])
+    history, synapses, matrices = simulation(A_initial, B1, B2, b, x, U, epoch=15, stdp=[A_initial, 0.1, 1, (-0.5, 0.5)])
+    print(history)
+    print(synapses)
+    print(matrices[0])
+    print(matrices[1])
+    print(matrices[2])
+    print(matrices[3])

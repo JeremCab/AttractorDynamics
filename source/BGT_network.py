@@ -49,45 +49,45 @@ edges_N = [
 # Example Usage and Tests #
 # *********************** #
 
-# Uncomment below for testing
+if __name__ == "__main__":
 
-# from RNN_simulator import simulation
+    from rnn_simulator import simulation
 
-# # Matrix A: weight matrix for internal connections
-# dim1 = len(nodes_N)
-# A = np.zeros((dim1, dim1))
-# for (src, dest), weight in edges_N:
-#     if src > 0 and dest > 0:  # Internal connections
-#         A[src - 1, dest - 1] = weight
+    # Matrix A: weight matrix for internal connections
+    dim1 = len(nodes_N)
+    A = np.zeros((dim1, dim1))
+    for (src, dest), weight in edges_N:
+        if src > 0 and dest > 0:  # Internal connections
+            A[src - 1, dest - 1] = weight
 
-# # Matrix B1: weight matrix for input-to-internal connections
-# dim2 = len(input_nodes_N)
-# B1 = np.zeros((dim2, dim1))
-# for (src, dest), weight in edges_N:
-#     if src < dim2:  # Input cells are the first in `input_nodes_N`
-#         B1[src - 1, dest - 1] = weight
+    # Matrix B1: weight matrix for input-to-internal connections
+    dim2 = len(input_nodes_N)
+    B1 = np.zeros((dim2, dim1))
+    for (src, dest), weight in edges_N:
+        if src < dim2:  # Input cells are the first in `input_nodes_N`
+            B1[src - 1, dest - 1] = weight
 
-# # Matrix B2: weight matrix for internal-to-input connections
-# B2 = np.zeros((dim1, dim2))
-# for (src, dest), weight in edges_N:
-#     if dest < dim2:  # Input cells are the first in `input_nodes_N`
-#         B2[src - 1, dest - 1] = weight
+    # Matrix B2: weight matrix for internal-to-input connections
+    B2 = np.zeros((dim1, dim2))
+    for (src, dest), weight in edges_N:
+        if dest < dim2:  # Input cells are the first in `input_nodes_N`
+            B2[src - 1, dest - 1] = weight
 
-# # Vector b: bias vector (initialized to zero)
-# b = np.zeros((A.shape[0], 1))
+    # Vector b: bias vector (initialized to zero)
+    b = np.zeros((A.shape[0], 1))
 
-# # Vector x: Initial state (null initial state)
-# x = np.zeros((A.shape[0], 1))
+    # Vector x: Initial state (null initial state)
+    x = np.zeros((A.shape[0], 1))
 
-# # Input dictionary U: Random binary inputs of size 100
-# input_sequence = np.random.randint(0, 2, 101)
-# U = {i: np.array([[bit]]) for i, bit in enumerate(input_sequence)}
+    # Input dictionary U: Random binary inputs of size 100
+    input_sequence = np.random.randint(0, 2, 101)
+    U = {i: np.array([[bit]]) for i, bit in enumerate(input_sequence)}
 
-# # Simulation
-# inputs_states, synapses, matrices = simulation(A, B1, B2, b, x, U, epoch=101)
+    # Simulation
+    inputs_states, synapses, matrices = simulation(A, B1, B2, b, x, U, epoch=101)
 
-# print("last inputs and states\n", inputs_states[:,-20:])
-# print("synapses\n", matrices[0])
-# print((matrices[0] == synapses[:, :, 0]).all())
-# print((matrices[0] == synapses[:, :, -1]).all())
-# print((matrices[0] == synapses[:, :, 55]).all())
+    print("last inputs and states\n", inputs_states[:,-20:])
+    print("synapses\n", matrices[0])
+    print((matrices[0] == synapses[:, :, 0]).all())
+    print((matrices[0] == synapses[:, :, -1]).all())
+    print((matrices[0] == synapses[:, :, 55]).all())

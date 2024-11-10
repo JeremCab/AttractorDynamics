@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from RNN_simulator import *
-from TarjanJohnson import *
 import numpy as np
+
+if __name__ != "__main__":
+    from source.rnn_simulator import simulation
+    import source.TarjanJohnson as tj
+else:
+    from rnn_simulator import simulation
+    import TarjanJohnson as tj
 
 # **************************** #
 # Encoding and Decoding Binary #
@@ -144,8 +149,8 @@ def net_to_aut(N):
         for y in range(2 ** n_inputs):
             u = np.array([[bit] for bit in decode(y, n_inputs)])                # input (vector)
             U = {0: u}
-            x_plus = simulation(A, B1, B2, b, x, U, epoch=2)[0][n_inputs:, 1:]  # next network state (vector)
-            x_plus_A = code([int(i[0]) for i in x_plus])
+            x_plus = simulation(A, B1, B2, b, x, U, epoch=2)[0][n_inputs:, -1]  # next network state (vector)
+            x_plus_A = code([int(i) for i in x_plus])
             aut_edges.append([(x_A, x_plus_A), y])
 
     return (aut_nodes, aut_edges)
@@ -166,10 +171,10 @@ def simple_cycles(A):
     result = {}
     A_dico = dico_form(A)
 
-    for scc in SCC(A_dico):
-        if is_an_SCC(scc) or check_scc_1(scc, A_dico):
+    for scc in tj.SCC(A_dico):
+        if tj.is_an_SCC(scc) or tj.check_scc_1(scc, A_dico):
             scc_dico = {node: [n for n in A_dico[node] if n in scc] for node in scc}
-            cycles = get_elementary_cycles(scc_dico)
+            cycles = tj.get_elementary_cycles(scc_dico)
             result[scc] = (cycles, len(cycles))
 
     return result
@@ -204,97 +209,97 @@ def find_SCC_0(list_of_lists):
 # Example Usage and Tests #
 # *********************** #
 
-# Uncomment below for testing
+if __name__ == "__main__":
 
-# # Graph dictionary
-# V = [1,2,3,4]
-# E = [ [(1,3), 0.3], [(1,5), 0.1],  [(2,1), 0.7], [(2,2), 0.9], [(2,4), 0.5], 
-#     [(3,4), 0.2], [(3,5), 0.7], [(4,1), 0.8], [(4,2), 0.1], [(4,3), 0.8] ]
-# G = (V, E)
-# print(G)
-# D = dico_form(G)
-# print(D)
+    # Graph dictionary
+    V = [1,2,3,4]
+    E = [ [(1,3), 0.3], [(1,5), 0.1],  [(2,1), 0.7], [(2,2), 0.9], [(2,4), 0.5], 
+        [(3,4), 0.2], [(3,5), 0.7], [(4,1), 0.8], [(4,2), 0.1], [(4,3), 0.8] ]
+    G = (V, E)
+    print(G)
+    D = dico_form(G)
+    print(D)
 
 
-# # From network to matrix and back
-# input_cells = [0, 1]
-# cells = [2,3,4,5]
-# connections = [	[(0,3), 0.7], # input
-#                 [(0,4), 0.2], # input
-#                 [(1,2), 0.4], # input
-#                 [(1,5), 0.9], # input
-#                 [(2,3), 0.2],
-#                 [(3,2), 0.3],
-#                 [(3,3), 0.3],
-#                 [(3,4), 0.3],
-#                 [(4,0), 0.7], # interactive
-#                 [(4,5), 0.3],
-#                 [(5,0), 0.4], # interactive
-#                 [(5,1), 0.3], # interactive
-#                 [(5,2), 0.8],
-#                 [(5,3), 0.1],
-#                 [("env",3), 0.6], # bias
-#                 [("env",5), 0.7], # bias
-#                 ]
-# N1 = (input_cells, cells, connections)
-# # print("N1", N1)
-# M = net_to_matrix(N1)
-# # print("A", M[0])
-# # print("B1", M[1])
-# # print("B2", M[2])
-# # print("C", M[3])
-# # print("x", M[4])
+    # From network to matrix and back
+    input_cells = [0, 1]
+    cells = [2,3,4,5]
+    connections = [	[(0,3), 0.7], # input
+                    [(0,4), 0.2], # input
+                    [(1,2), 0.4], # input
+                    [(1,5), 0.9], # input
+                    [(2,3), 0.2],
+                    [(3,2), 0.3],
+                    [(3,3), 0.3],
+                    [(3,4), 0.3],
+                    [(4,0), 0.7], # interactive
+                    [(4,5), 0.3],
+                    [(5,0), 0.4], # interactive
+                    [(5,1), 0.3], # interactive
+                    [(5,2), 0.8],
+                    [(5,3), 0.1],
+                    [("env",3), 0.6], # bias
+                    [("env",5), 0.7], # bias
+                    ]
+    N1 = (input_cells, cells, connections)
+    # print("N1", N1)
+    M = net_to_matrix(N1)
+    # print("A", M[0])
+    # print("B1", M[1])
+    # print("B2", M[2])
+    # print("C", M[3])
+    # print("x", M[4])
 
-# N2 = matrix_to_net(M[0], M[1], M[2], M[3])
-# # print("N2", N2)
-# # print("input cells")
-# # print(N1[0] == N2[0])
-# # print("cells")
-# # print(N1[1] == N2[1])
-# # print("connections")
+    N2 = matrix_to_net(M[0], M[1], M[2], M[3])
+    # print("N2", N2)
+    # print("input cells")
+    # print(N1[0] == N2[0])
+    # print("cells")
+    # print(N1[1] == N2[1])
+    # print("connections")
 
-# b = True
-# for e in N1[2]:
-#     if e not in N2[2]:
-#         print(e)
-#         b = False
-# print(b)
-# b = True
-# for e in N2[2]:
-#     if e not in N1[2] and e[1] != 0:
-#         print(e)
-#         b = False
-# print(b)
-# # OK: N1 et N2 are identical
+    b = True
+    for e in N1[2]:
+        if e not in N2[2]:
+            print(e)
+            b = False
+    print(b)
+    b = True
+    for e in N2[2]:
+        if e not in N1[2] and e[1] != 0:
+            print(e)
+            b = False
+    print(b)
+    # OK: N1 et N2 are identical
 
-# # Conputing attractors
-# input_cells = [0, 1]
-# cells = [2,3,4,5]
-# connections = [[(0,3), 0.7], # input
-#                 [(0,4), 0.2], # input
-#                 [(1,2), 0.4], # input
-#                 [(1,5), 0.9], # input
-#                 [(2,3), 0.2],
-#                 [(3,2), 0.3],
-#                 [(3,3), 0.3],
-#                 [(3,4), 0.3],
-#                 [(4,0), 0.7], # interactive
-#                 [(4,5), 0.3],
-#                 [(5,0), 0.4], # interactive
-#                 [(5,1), 0.3], # interactive
-#                 [(5,2), 0.8],
-#                 [(5,3), 0.1],
-#                 [("env",3), 0.6], # bias
-#                 [("env",5), 0.7]  # bias
-#                 ]
+    # Conputing attractors
+    input_cells = [0, 1]
+    cells = [2,3,4,5]
+    connections = [[(0,3), 0.7], # input
+                    [(0,4), 0.2], # input
+                    [(1,2), 0.4], # input
+                    [(1,5), 0.9], # input
+                    [(2,3), 0.2],
+                    [(3,2), 0.3],
+                    [(3,3), 0.3],
+                    [(3,4), 0.3],
+                    [(4,0), 0.7], # interactive
+                    [(4,5), 0.3],
+                    [(5,0), 0.4], # interactive
+                    [(5,1), 0.3], # interactive
+                    [(5,2), 0.8],
+                    [(5,3), 0.1],
+                    [("env",3), 0.6], # bias
+                    [("env",5), 0.7]  # bias
+                    ]
 
-# print("\nNetwork N")
-# N = (input_cells, cells, connections)
-# print(N)
-# print("\nComputation of automaton A")
-# A = net_to_aut(N)
-# print(A)
+    print("\nNetwork N")
+    N = (input_cells, cells, connections)
+    print(N)
+    print("\nComputation of automaton A")
+    A = net_to_aut(N)
+    print(A)
 
-# print("\nComputation of attractors (i.e. cycles) of A")
-# attractors = simple_cycles(A)
-# print(attractors)
+    print("\nComputation of attractors (i.e. cycles) of A")
+    attractors = simple_cycles(A)
+    print(attractors)

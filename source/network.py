@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from attractors import *
 
 # *********************** #
 # 3 Preliminary Functions #
@@ -144,19 +143,21 @@ def generate_network(nb_inputs: int, nb_nodes: int, nb_input_connections: int = 
 # Example Usage and Tests #
 # *********************** #
 
-# Uncomment below for testing
+if __name__ == "__main__":
 
-N = generate_network(1, 10, 5, 30)
-# print(N[0])
-# print(N[1])
-# print(N[2])
-# print(len(N[2]))
-A = net_to_aut(N)
-dico_cycles = simple_cycles(A)
-for k, v in dico_cycles.items():
-    print(k)
-    print(v, "\n")
-SCC = largest_list(list(dico_cycles.keys()))
-#SCC = find_SCC_0(list(dico_cycles.keys()))
-(C, n) = dico_cycles[SCC]
-print(C,n)
+    from attractors import *
+
+    N = generate_network(1, 10, 5, 30)
+    # print(N[0])
+    # print(N[1])
+    # print(N[2])
+    # print(len(N[2]))
+    A = net_to_aut(N)
+    dico_cycles = simple_cycles(A)
+    for k, v in dico_cycles.items():
+        print(k)
+        print(v, "\n")
+    SCC = largest_list(list(dico_cycles.keys()))
+    #SCC = find_SCC_0(list(dico_cycles.keys()))
+    (C, n) = dico_cycles[SCC]
+    print(C,n)

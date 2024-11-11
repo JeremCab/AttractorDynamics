@@ -27,7 +27,7 @@ noise = (-0.1, 0.5)
 input_size = 3000  # Adjust as necessary
 memory, memory_length = 149, 1
 input_dim = 1
-nb_triggers = 26
+nb_triggers = 19
 trigger_length = 10
 
 cwd = os.getcwd()
@@ -93,7 +93,9 @@ def generate_input(input_dim=1, input_size=300, nb_triggers=10, trigger_length=1
     pattern = {i: np.random.randint(2, size=input_dim) for i in range(trigger_length)}
 
     # Generate input stream and insert trigger pattern
-    U = random_input(dim=input_dim, length=input_size)
+    # U = random_input(dim=input_dim, length=input_size) # XXX
+    U = poisson_input(lamda=10, dim=input_dim, length=input_size)
+
     trigger_positions = sorted(np.random.randint(1, input_size, nb_triggers))
     U = mixed_input(U, pattern, trigger_positions)
 

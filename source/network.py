@@ -55,6 +55,27 @@ def periodic_input(dim: int = 1, length: int = 10, times: int = 10) -> dict[int,
         inputs[t] = inputs[t - length * 2]
     return inputs
 
+# ************************* #
+# Generating Poisson Inputs #
+# ************************* #
+
+def poisson_input(lamda = 5, dim: int = 2, length: int = 100) -> dict[int, np.ndarray]:
+    """Generate a random Poisson input stream of given lambda, dimension and length.
+    https://neuronaldynamics.epfl.ch/online/Ch7.S3.html
+    """
+    inputs = np.zeros(shape=(dim, length))
+
+    for d in range(dim):
+        isi = np.random.poisson(lam=lamda, size=length) # inter-spike interval
+        isi = [ [0]*i + [1] for i in isi ]
+        isi = np.array([t for interval in isi for t in interval])[:length]
+        inputs[d, :] = isi
+
+    inputs = {t: inputs[:,t] for t in range(length)}
+
+    return inputs
+
+
 # ************************************ #
 # Retrieving Head and Tail of an Input #
 # ************************************ #
@@ -145,19 +166,24 @@ def generate_network(nb_inputs: int, nb_nodes: int, nb_input_connections: int = 
 
 if __name__ == "__main__":
 
-    from attractors import *
+    # Test Poisson inputs
+    p = poisson_input()
+    print("Poisson inout stream:\n", p)
+    
+    # Test attractors
+    # from attractors import * # XXX import problem
 
-    N = generate_network(1, 10, 5, 30)
-    # print(N[0])
-    # print(N[1])
-    # print(N[2])
-    # print(len(N[2]))
-    A = net_to_aut(N)
-    dico_cycles = simple_cycles(A)
-    for k, v in dico_cycles.items():
-        print(k)
-        print(v, "\n")
-    SCC = largest_list(list(dico_cycles.keys()))
-    #SCC = find_SCC_0(list(dico_cycles.keys()))
-    (C, n) = dico_cycles[SCC]
-    print(C,n)
+    # N = generate_network(1, 10, 5, 30)
+    # # print(N[0])
+    # # print(N[1])
+    # # print(N[2])
+    # # print(len(N[2]))
+    # A = net_to_aut(N)
+    # dico_cycles = simple_cycles(A)
+    # for k, v in dico_cycles.items():
+    #     print(k)
+    #     print(v, "\n")
+    # SCC = largest_list(list(dico_cycles.keys()))
+    # #SCC = find_SCC_0(list(dico_cycles.keys()))
+    # (C, n) = dico_cycles[SCC]
+    # print(C,n)

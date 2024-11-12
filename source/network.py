@@ -60,7 +60,8 @@ def periodic_input(dim: int = 1, length: int = 10, times: int = 10) -> dict[int,
 # ************************* #
 
 def poisson_input(lamda = 5, dim: int = 2, length: int = 100) -> dict[int, np.ndarray]:
-    """Generate a random Poisson input stream of given lambda, dimension and length.
+    """
+    Generate a random Poisson input stream of given lambda, dimension and length.
     https://neuronaldynamics.epfl.ch/online/Ch7.S3.html
     """
     inputs = np.zeros(shape=(dim, length))

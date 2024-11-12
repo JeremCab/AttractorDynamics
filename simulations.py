@@ -27,7 +27,7 @@ noise = (-0.1, 0.5)
 input_size = 3000  # Adjust as necessary
 memory, memory_length = 149, 1
 input_dim = 1
-nb_triggers = 19
+nb_triggers = 26
 trigger_length = 10
 
 cwd = os.getcwd()

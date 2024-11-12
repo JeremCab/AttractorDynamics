@@ -45,10 +45,9 @@ def sigma(x):
 
 sigma = np.vectorize(sigma, otypes=[np.ndarray])
 
-
-# ********** #
-# STDP Rule  #
-# ********** #
+# ********* #
+# STDP Rule #
+# ********* #
 
 def STDP(A, x_tminus1, x_t, A_default, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
     """
@@ -83,6 +82,34 @@ def STDP(A, x_tminus1, x_t, A_default, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
 
     return A
 
+# ******** #
+# GSP Rule #
+# ******** #
+
+def GSP(A_default, mu_A, sigma2_A, bounds=(-0.5, 0.5)):
+    """
+    Applies a global stochastic plasticity rule to (non-interactive) connections in matrix A.
+    Each non-zero weight a_ij of A is sampled in the normal distribution N(mu_ij, sigma2_ij)
+    If A stretches beyond the bounds [A_default + bounds[0], A_default + bounds[0]], then it is clipped.
+    
+    Args:
+        A_default (np.ndarray): Default (initial) weight matrix for bounding weight changes.
+        mu_A (np.ndarray): Matrix of means w.r.t. which the new weights will be sampled.
+        sigma2_A (np.ndarray): Matrix of variances w.r.t. which the new weights will be sampled.
+        bounds (tuple, optional): Tuple of lower and upper bounds for weight changes. Defaults to (-0.5, 0.5).
+
+    Returns:
+        np.ndarray: Updated weight matrix A.
+    """
+
+    mask = A_default != 0
+    dim = A_default.shape[0], A_default.shape[1]
+    A = np.random.normal(mu_A, sigma2_A, size=dim)
+    A = A * mask
+    A = np.maximum(A, A_default + bounds[0])  # clipping values (adding negative bound)
+    A = np.minimum(A, A_default + bounds[1])  # clipping values (adding positive bound)
+    
+    return A_default, A, mu_A, sigma2_A
 
 # ********* #
 # Simulator #

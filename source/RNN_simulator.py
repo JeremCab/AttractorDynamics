@@ -86,7 +86,7 @@ def STDP(A, x_tminus1, x_t, A_default, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
 # GSP Rule #
 # ******** #
 
-def GSP(A_default, mu_A, sigma2_A, bounds=(-0.5, 0.5)):
+def StochasticSynapses(A_default, mu_A, sigma2_A, bounds=(-0.5, 0.5)):
     """
     Applies a global stochastic plasticity rule to (non-interactive) connections in matrix A.
     Each non-zero weight a_ij of A is sampled in the normal distribution N(mu_ij, sigma2_ij)

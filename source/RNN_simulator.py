@@ -69,7 +69,7 @@ def STDP(A, x_tminus1, x_t, A_default, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
         for j in range(A.shape[0]):
             if A[j,i] != 0:  # Only apply STDP to non-zero connections
                 # Introduce noise to learning rate by modifying eta slightly
-                factor = (1.05 - 0.95) * np.random.random_sample() + 0.95
+                factor = 1 # (1.05 - 0.95) * np.random.random_sample() + 0.95 # XXX
                 eta_modified = eta * factor
                 # Calculate the new weight with STDP adjustments
                 temp_weight = A[j,i] + eta_modified * (x_t[i].item() * x_tminus1[j].item() - plumb * x_tminus1[i].item() * x_t[j].item())
@@ -130,7 +130,7 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
         stdp (str or list, optional): STDP parameters as [A_default, eta, plumb, bounds] or "off" to disable STDP.
 
     Returns:
-        tuple: Contains the history of states and the final matrices (A, B1, B2, b).
+        list: Contains the history of states and the final matrices (A, B1, B2, b).
     """
     dim = B1.shape[0] + x.shape[0]                        # Calculate state space dimension
     history = np.zeros([dim, epoch])                      # Initialize history with dummy states
@@ -142,12 +142,14 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
         u = U.get(i, np.zeros([B1.shape[0], 1]))  
         u = theta(np.dot(B2.T, x) + u)             # Processed input after interactive signal
         
-        # Append current input and state to history
-        history[:, i] = np.vstack([u, x]).reshape(-1)
+        # Append current input and state to history     # XXX
+        # history[:, i] = np.vstack([u, x]).reshape(-1) # XXX shiuld it be here???
         
         # Compute the new internal state
         x_plus = theta(np.dot(A.T, x) + np.dot(B1.T, u) + b)
-        
+        # history[:, i] = np.vstack([u, x_plus]).reshape(-1) # XXX new !!!
+        history[:, i] = np.vstack([u, x]).reshape(-1) # XXX new add current input and state to history
+
         # Apply STDP if enabled
         if stdp != "off":
             A = STDP(A, x, x_plus, stdp[0], stdp[1], stdp[2], stdp[3])
@@ -156,7 +158,7 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
         x = x_plus  # Update state for the next iteration
     
     # Remove the initial dummy state and return the state history and final matrices
-    return history, synapses, (np.copy(A), np.copy(B1), np.copy(B2), np.copy(b))
+    return history, synapses, [np.copy(A), np.copy(B1), np.copy(B2), np.copy(b), x] # XXX return x too now!
 
 
 # *********************** #
@@ -165,29 +167,34 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
 
 if __name__ == "__main__":
 
-    # Run STDP for multiple steps to observe weight updates
-    A = np.array([[0, 0.5, 0, 0, 0], [0, 0.5, 0, 0, 2.7], [0, 0.5, 0, 0, 0], [0, 0, -0.5, 0, 0], [0, 0, 0, 0, 0]])
-    A_default = np.copy(A)  # Immutable copy of A for bounding in STDP
-    x_tminus1 = np.array([[1], [0], [1], [0], [1]])
-    x_t = np.array([[0], [1], [0], [1], [0]])
+    # # Run STDP for multiple steps to observe weight updates
+    # A = np.array([[0, 0.5, 0, 0, 0], [0, 0.5, 0, 0, 2.7], [0, 0.5, 0, 0, 0], [0, 0, -0.5, 0, 0], [0, 0, 0, 0, 0]])
+    # A_default = np.copy(A)  # Immutable copy of A for bounding in STDP
+    # x_tminus1 = np.array([[1], [0], [1], [0], [1]])
+    # x_t = np.array([[0], [1], [0], [1], [0]])
 
-    for i in range(60):
-        A = STDP(A, x_tminus1, x_t, A_default)
-        print("Step", i, "\n", A)
+    # for i in range(60):
+    #     A = STDP(A, x_tminus1, x_t, A_default)
+    #     print("Step", i, "\n", A)
 
     # Run simulation with STDP enabled
-    A_initial = np.array([[0, 0.5, 0.5], [0, 0.3, 0], [0.2, 0, 0]])
-    B1 = np.array([[0.5, 0, 0], [0, 0, 0.5]])
-    B2 = np.array([[0, 0], [1, 0], [0, 0]])
-    b = np.array([[0.5], [0.5], [0]])
+    A_initial = np.array([[0., 1., 0.], [0., 0., 1.], [1., 0., 0.]])
+    B1 = np.array([[1., 0., 0.]])
+    B2 = np.array([[0], [0], [0]])
+    b = np.array([[0.], [0.], [0.]])
     x = np.zeros([3, 1])
     # U = random_input(dim=2, length=100)
-    U = {t: np.random.randint(2, size=(2, 1)) for t in range(100)}
+    U = {t: np.random.randint(2, size=(1, 1)) for t in range(1)}
 
-    history, synapses, matrices = simulation(A_initial, B1, B2, b, x, U, epoch=15, stdp=[A_initial, 0.1, 1, (-0.5, 0.5)])
-    print(history)
-    print(synapses)
-    print(matrices[0])
-    print(matrices[1])
-    print(matrices[2])
-    print(matrices[3])
+    history, synapses, matrices = simulation(A_initial, B1, B2, b, x, U, epoch=20, stdp=[A_initial, 0.1, 1, (-0.5, 0.5)])
+    print("********* U *********\n", U)
+    print("********* history *********\n", history)
+    print("********* A_initial *********\n", A_initial)
+    print("********* synapses *********\n")
+    for i in range(20):
+        print(synapses[:, :, i])
+    print("********* A *********\n", matrices[0])
+    print("********* B1 *********\n", matrices[1])
+    print("********* B2 *********\n", matrices[2])
+    print("********* b *********\n", matrices[3])
+    print("********* x *********\n", matrices[4])

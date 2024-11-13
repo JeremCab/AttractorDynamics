@@ -24,10 +24,10 @@ eta_in = 0.15
 plumb = 1
 bounds = (-0.1999, 0.5999)
 noise = (-0.1, 0.5)
-input_size = 3000  # Adjust as necessary
+input_size = 3000 # Adjust as necessary
 memory, memory_length = 149, 1
 input_dim = 1
-nb_triggers = 26
+nb_triggers = 19
 trigger_length = 10
 
 cwd = os.getcwd()
@@ -63,7 +63,7 @@ def initialize_simulation():
     # Initialize results storage
     cycles_list = [n]
 
-    # Write initial simulation parameters to the output file # XXX fix this!!!
+    # Write initial simulation parameters to the output file
     with open(output_file, "w") as f:
         f.write("memory_length,nb_attractors,min_attractors,max_attractors,eta,tick\n")
         f.write(f"{memory_length}, {n}, {n}, {n}, {eta_in}, 0\n")
@@ -93,8 +93,8 @@ def generate_input(input_dim=1, input_size=300, nb_triggers=10, trigger_length=1
     pattern = {i: np.random.randint(2, size=input_dim) for i in range(trigger_length)}
 
     # Generate input stream and insert trigger pattern
-    # U = random_input(dim=input_dim, length=input_size) # XXX
-    U = poisson_input(lamda=10, dim=input_dim, length=input_size)
+    U = random_input(dim=input_dim, length=input_size) # XXX
+    # U = poisson_input(lamda=10, dim=input_dim, length=input_size)
 
     trigger_positions = sorted(np.random.randint(1, input_size, nb_triggers))
     U = mixed_input(U, pattern, trigger_positions)
@@ -114,7 +114,7 @@ def run_simulation(U, ticks, M, A_default, cycles_list):
     Args:
         U (dict): Input stream with trigger patterns.
         ticks (list): Positions where trigger patterns end.
-        M (list): Initial network matrices.
+        M (list): Current network matrices and current state.
         A_default (np.ndarray): Original weight matrix for the STDP rule.
         cycles_list (list): List to store cycle counts for tracking.
     """
@@ -132,23 +132,22 @@ def run_simulation(U, ticks, M, A_default, cycles_list):
         memory_length = memory_length + memory if nb_iter in ticks else max(1, memory_length - 1)
 
         # Extract next input segment
-        current_input = {0: U[nb_iter], 1: U[nb_iter + 1]}
+        current_input = {0: U[nb_iter]} # , 1: U[nb_iter + 1]} # XXX
 
         # Simulate network behavior and apply STDP rule
-        history, _, matrices = simulation(M[0], M[1], M[2], M[3], M[4], current_input,
-                                          epoch=len(current_input), 
-                                          stdp=[A_default, eta, plumb, bounds])
+        x = M[-1] # current state
+        _, _, M = simulation(M[0], M[1], M[2], M[3], x, 
+                                    current_input,
+                                    epoch=len(current_input), 
+                                    stdp=[A_default, eta, plumb, bounds])
+        x_plus = M[-1].reshape(-1, 1) # new state
 
         # Compute cycles for the current network state
-        N_new = matrix_to_net(matrices[0], matrices[1], matrices[2], matrices[3])
+        N_new = matrix_to_net(M[0], M[1], M[2], M[3])
         A_new = net_to_aut(N_new)
         dico_cycles = simple_cycles(A_new)
         SCC = largest_list(list(dico_cycles.keys()))
         _, n = dico_cycles[SCC]
-
-        # Update matrix M and state history for next iteration
-        M = net_to_matrix(N_new)
-        M[4] = history[current_input[0].shape[0]:, history.shape[1] - 1:]
 
         # Update cycle tracking and STDP parameters
         stack_operation(cycles_list, memory_length, n)

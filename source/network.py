@@ -76,7 +76,6 @@ def poisson_input(lamda = 5, dim: int = 2, length: int = 100) -> dict[int, np.nd
 
     return inputs
 
-
 # ************************************ #
 # Retrieving Head and Tail of an Input #
 # ************************************ #

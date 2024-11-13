@@ -94,7 +94,7 @@ def generate_input(input_dim=1, input_size=300, nb_triggers=10, trigger_length=1
 
     # Generate input stream and insert trigger pattern
     U = random_input(dim=input_dim, length=input_size) # XXX
-    # U = poisson_input(lamda=10, dim=input_dim, length=input_size)
+    # U = poisson_input(lamda=5, dim=input_dim, length=input_size)
 
     trigger_positions = sorted(np.random.randint(1, input_size, nb_triggers))
     U = mixed_input(U, pattern, trigger_positions)

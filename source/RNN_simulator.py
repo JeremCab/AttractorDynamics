@@ -49,7 +49,7 @@ sigma = np.vectorize(sigma, otypes=[np.ndarray])
 # STDP Rule #
 # ********* #
 
-def STDP(A, x_tminus1, x_t, A_default, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
+def STDP(A, x_tminus1, x_t, A_init, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
     """
     Applies a targeted STDP (Spike-Timing Dependent Plasticity) rule to non-interactive connections in matrix A.
     
@@ -57,7 +57,7 @@ def STDP(A, x_tminus1, x_t, A_default, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
         A (np.ndarray): Current weight matrix.
         x_tminus1 (np.ndarray): State vector at time t-1.
         x_t (np.ndarray): State vector at time t.
-        A_default (np.ndarray): Default (initial) weight matrix for bounding weight changes.
+        A_init (np.ndarray): Default (initial) weight matrix for bounding weight changes.
         eta (float, optional): Learning rate for STDP. Defaults to 0.01.
         plumb (float, optional): Coefficient favoring weight decrease. Defaults to 1.
         bounds (tuple, optional): Tuple of lower and upper bounds for weight changes. Defaults to (-0.5, 0.5).
@@ -74,8 +74,8 @@ def STDP(A, x_tminus1, x_t, A_default, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
                 # Calculate the new weight with STDP adjustments
                 temp_weight = A[j,i] + eta_modified * (x_t[i].item() * x_tminus1[j].item() - plumb * x_tminus1[i].item() * x_t[j].item())
 
-                # Clip the weight within bounds defined by A_default and bounds parameter
-                A[j,i] = np.clip(temp_weight, A_default[j,i] + bounds[0], A_default[j,i] + bounds[1])
+                # Clip the weight within bounds defined by A_init and bounds parameter
+                A[j,i] = np.clip(temp_weight, A_init[j,i] + bounds[0], A_init[j,i] + bounds[1])
 
                 if A[j][i] == 0:
                     print("Connection dead...")
@@ -86,14 +86,14 @@ def STDP(A, x_tminus1, x_t, A_default, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
 # GSP Rule #
 # ******** #
 
-def StochasticSynapses(A_default, mu_A, sigma2_A, bounds=(-0.5, 0.5)):
+def StochasticSynapses(A_init, mu_A, sigma2_A, bounds=(-0.5, 0.5)):
     """
-    Applies a global stochastic plasticity rule to (non-interactive) connections in matrix A.
+    Gaussian sampling of (non-interactive) synaptic weights.
     Each non-zero weight a_ij of A is sampled in the normal distribution N(mu_ij, sigma2_ij)
-    If A stretches beyond the bounds [A_default + bounds[0], A_default + bounds[0]], then it is clipped.
+    If A stretches beyond the bounds [A_init + bounds[0], A_init + bounds[0]], then it is clipped.
     
     Args:
-        A_default (np.ndarray): Default (initial) weight matrix for bounding weight changes.
+        A_init (np.ndarray): Default (initial) weight matrix for bounding weight changes.
         mu_A (np.ndarray): Matrix of means w.r.t. which the new weights will be sampled.
         sigma2_A (np.ndarray): Matrix of variances w.r.t. which the new weights will be sampled.
         bounds (tuple, optional): Tuple of lower and upper bounds for weight changes. Defaults to (-0.5, 0.5).
@@ -102,14 +102,47 @@ def StochasticSynapses(A_default, mu_A, sigma2_A, bounds=(-0.5, 0.5)):
         np.ndarray: Updated weight matrix A.
     """
 
-    mask = A_default != 0
-    dim = A_default.shape[0], A_default.shape[1]
+    mask = A_init != 0
+    dim = A_init.shape[0], A_init.shape[1]
     A = np.random.normal(mu_A, sigma2_A, size=dim)
     A = A * mask
-    A = np.maximum(A, A_default + bounds[0])  # clipping values (adding negative bound)
-    A = np.minimum(A, A_default + bounds[1])  # clipping values (adding positive bound)
+    A = np.maximum(A, A_init + bounds[0])  # clipping values (adding negative bound)
+    A = np.minimum(A, A_init + bounds[1])  # clipping values (adding positive bound)
     
-    return A_default, A, mu_A, sigma2_A
+    return A_init, A, mu_A, sigma2_A
+
+def GSP(A_init, A_minus1, A, mu_A, sigma2_A, eta=0.1, reward=0, bounds=(-0.5, 0.5)):
+    """
+    Applies a global stochastic plasticity rule to (non-interactive) connections in matrix A.
+    if the reward is positive, then the mean is shifted towards tthe direction of A_minus1 -> A
+    and the std is decreased. Then, a new weight matrix A is samples according to this new mean and std.
+    Otherwise, A remains unchanged.
+    
+    Args:
+        A_init (np.ndarray): Default (initial) weight matrix for bounding weight changes.
+        A (np.ndarray): Weight matrix at current time step.
+        A_minus1 (np.ndarray): Weight matrix at previous time step.
+        mu_A (np.ndarray): Current matrix of means w.r.t. which the new weights have been sampled.
+        sigma2_A (np.ndarray): Current matrix of variances w.r.t. which the new weights have been be sampled.
+        reward (float): Postive learning rate.
+        reward (float): Postive reward.
+        bounds (tuple, optional): Tuple of lower and upper bounds for weight changes. Defaults to (-0.5, 0.5).
+
+    Returns:
+        list: List of original weights, updated weights, updated means, and updated stds.
+    """
+        
+    if reward > 0:
+
+        A_diff_sign = ((A_minus1 - A) > 0) * 2 - 1
+
+        # XXX this rule can be more sophisticated
+        mu_A = mu_A + (eta * A_diff_sign)                    # update mean (shifting)
+        sigma2_A = np.maximum(sigma2_A - eta * sigma2_A, 0)  # update std (decreasing)
+
+        A_init, A, mu_A, sigma2_A = StochasticSynapses(A_init, mu_A, sigma2_A, bounds=(-0.5, 0.5))
+
+    return [A_init, A, mu_A, sigma2_A]
 
 # ********* #
 # Simulator #
@@ -127,7 +160,7 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
         x (np.ndarray): Initial state vector.
         U (dict): Input dictionary with keys as time steps and values as input vectors.
         epoch (int, optional): Number of simulation steps. Default to 100.
-        stdp (str or list, optional): STDP parameters as [A_default, eta, plumb, bounds] or "off" to disable STDP.
+        stdp (str or list, optional): STDP parameters as [A_init, eta, plumb, bounds] or "off" to disable STDP.
 
     Returns:
         list: Contains the history of states and the final matrices (A, B1, B2, b).
@@ -169,12 +202,12 @@ if __name__ == "__main__":
 
     # # Run STDP for multiple steps to observe weight updates
     # A = np.array([[0, 0.5, 0, 0, 0], [0, 0.5, 0, 0, 2.7], [0, 0.5, 0, 0, 0], [0, 0, -0.5, 0, 0], [0, 0, 0, 0, 0]])
-    # A_default = np.copy(A)  # Immutable copy of A for bounding in STDP
+    # A_init = np.copy(A)  # Immutable copy of A for bounding in STDP
     # x_tminus1 = np.array([[1], [0], [1], [0], [1]])
     # x_t = np.array([[0], [1], [0], [1], [0]])
 
     # for i in range(60):
-    #     A = STDP(A, x_tminus1, x_t, A_default)
+    #     A = STDP(A, x_tminus1, x_t, A_init)
     #     print("Step", i, "\n", A)
 
     # Run simulation with STDP enabled

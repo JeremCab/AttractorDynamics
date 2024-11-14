@@ -31,7 +31,7 @@ nb_triggers = 19
 trigger_length = 10
 
 cwd = os.getcwd()
-output_file = os.path.join(cwd, "runs", f"new_simul_{nb_triggers}.csv")
+output_file = os.path.join(cwd, "runs", f"GSP_no_trigger_{nb_triggers}.csv")
 
 
 # ***************************** #
@@ -169,6 +169,6 @@ if __name__ == "__main__":
     
     # Generate input and run simulation
     U, ticks = generate_input(input_dim=input_dim, input_size=input_size,
-                                nb_triggers=nb_triggers, trigger_length=trigger_length)
+                              nb_triggers=nb_triggers, trigger_length=trigger_length)
     
     run_simulation(U, ticks, M, A_init, cycles_list)

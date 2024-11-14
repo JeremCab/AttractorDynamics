@@ -69,7 +69,7 @@ def STDP(A, x_tminus1, x_t, A_init, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
         for j in range(A.shape[0]):
             if A[j,i] != 0:  # Only apply STDP to non-zero connections
                 # Introduce noise to learning rate by modifying eta slightly
-                factor = 1 # (1.05 - 0.95) * np.random.random_sample() + 0.95 # XXX
+                factor = (1.05 - 0.95) * np.random.random_sample() + 0.95
                 eta_modified = eta * factor
                 # Calculate the new weight with STDP adjustments
                 temp_weight = A[j,i] + eta_modified * (x_t[i].item() * x_tminus1[j].item() - plumb * x_tminus1[i].item() * x_t[j].item())
@@ -154,7 +154,7 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
     
     Args:
         A (np.ndarray): Weight matrix for internal states.
-        B1 (np.ndarray): Weight matrix for influence of inputs on internal states.
+        B1 (np.ndarray): Weight matrix for influenc e of inputs on internal states.
         B2 (np.ndarray): Weight matrix for influence of internal states on inputs.
         b (np.ndarray): Bias vector for internal state update.
         x (np.ndarray): Initial state vector.
@@ -175,13 +175,9 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
         u = U.get(i, np.zeros([B1.shape[0], 1]))  
         u = theta(np.dot(B2.T, x) + u)             # Processed input after interactive signal
         
-        # Append current input and state to history     # XXX
-        # history[:, i] = np.vstack([u, x]).reshape(-1) # XXX shiuld it be here???
-        
         # Compute the new internal state
         x_plus = theta(np.dot(A.T, x) + np.dot(B1.T, u) + b)
-        # history[:, i] = np.vstack([u, x_plus]).reshape(-1) # XXX new !!!
-        history[:, i] = np.vstack([u, x]).reshape(-1) # XXX new add current input and state to history
+        history[:, i] = np.vstack([u, x]).reshape(-1)
 
         # Apply STDP if enabled
         if stdp != "off":
@@ -191,7 +187,7 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
         x = x_plus  # Update state for the next iteration
     
     # Remove the initial dummy state and return the state history and final matrices
-    return history, synapses, [np.copy(A), np.copy(B1), np.copy(B2), np.copy(b), x] # XXX return x too now!
+    return history, synapses, [np.copy(A), np.copy(B1), np.copy(B2), np.copy(b), x]
 
 
 # *********************** #

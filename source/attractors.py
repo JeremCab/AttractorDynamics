@@ -155,12 +155,37 @@ def net_to_aut(N):
 
     return (aut_nodes, aut_edges)
 
+def netM_to_aut(M):
+    """
+    Converts a Boolean network given given in matricial form M into an automaton.
+    Args:
+        M (tuple): Network in the matricial form M = (A, B1, B2, b, x).
+    Returns:
+        tuple: Automaton as (nodes, edges).
+    """
+    A, B1, B2, b, _ = M
+    n_cells, n_inputs = A.shape[0], B1.shape[0]
+    
+    aut_nodes = list(range(2 ** n_cells))
+    aut_edges = []
+
+    for x_A in aut_nodes:
+        x = np.array([[bit] for bit in decode(x_A, n_cells)])                   # network state (vector)
+        
+        for y in range(2 ** n_inputs):
+            u = np.array([[bit] for bit in decode(y, n_inputs)])                # input (vector)
+            U = {0: u}
+            x_plus = simulation(A, B1, B2, b, x, U, epoch=2)[0][n_inputs:, -1]  # next network state (vector)
+            x_plus_A = code([int(i) for i in x_plus])
+            aut_edges.append([(x_A, x_plus_A), y])
+
+    return (aut_nodes, aut_edges)
 
 # ********************** #
 # Cycles in an Automaton #
 # ********************** #
 
-def simple_cycles(A):
+def get_simple_cycles(A):
     """
     Computes simple cycles in an automaton.
     Args:
@@ -190,19 +215,37 @@ def largest_list(list_of_lists):
     """
     return max(list_of_lists, key=len, default=[])
 
+# ************************ #
+# Attractors in an Network #
+# ************************ #
 
-def find_SCC_0(list_of_lists):
+def get_attractors(matrices):
     """
-    Finds the list containing '0' within a list of lists.
-    Args:
-        list_of_lists (list of list): List containing multiple lists.
-    Returns:
-        list: List containing '0', if exists.
+    Computes attractors of a network given in matricial form.
+    Attractors are returned as a dico of cycles.
     """
-    for sublist in list_of_lists:
-        if 0 in sublist:
-            return sublist
-    return []
+    A, B1, B2, b, _ = matrices
+    N = matrix_to_net(A, B1, B2, b)
+    A = net_to_aut(N)
+    dico_cycles = get_simple_cycles(A)
+    return dico_cycles
+
+def get_current_attractor(matrices):
+    """
+    Given a network N given in matricial form M, where the current state x is given by M[4], 
+    get current attractor N containing state x, if it exists.
+    The current attractor is returned as a dico of the form  {SCC : (tuple_of_cycles, number_of_cycles)}
+    """
+    x = matrices[4]
+    x_code = int(code(x.reshape(-1)))
+
+    dico_cycles = get_attractors(matrices)
+
+    for SCC in dico_cycles.keys():
+        if x_code in SCC:
+            return {SCC: dico_cycles[SCC]}
+        return None
+
 
 
 # *********************** #
@@ -219,7 +262,6 @@ if __name__ == "__main__":
     print(G)
     D = dico_form(G)
     print(D)
-
 
     # From network to matrix and back
     input_cells = [0, 1]
@@ -248,7 +290,7 @@ if __name__ == "__main__":
     # print("B1", M[1])
     # print("B2", M[2])
     # print("C", M[3])
-    # print("x", M[4])
+    print("x", M[4])
 
     N2 = matrix_to_net(M[0], M[1], M[2], M[3])
     # print("N2", N2)
@@ -275,7 +317,7 @@ if __name__ == "__main__":
     # Conputing attractors
     input_cells = [0, 1]
     cells = [2,3,4,5]
-    connections = [[(0,3), 0.7], # input
+    connections = [[(0,3), 0.7],  # input
                     [(0,4), 0.2], # input
                     [(1,2), 0.4], # input
                     [(1,5), 0.9], # input
@@ -300,6 +342,13 @@ if __name__ == "__main__":
     A = net_to_aut(N)
     print(A)
 
-    print("\nComputation of attractors (i.e. cycles) of A")
-    attractors = simple_cycles(A)
+    print("\nCycles of A")
+    cycles = get_simple_cycles(A)
+    print(cycles)
+    print("\Attractors of N")
+    attractors = get_attractors(M)
     print(attractors)
+    print("\Attractor of N containing state x")
+    M[4] = np.array([1., 1., 0., 1.]).reshape(-1, 1)
+    print("x", M[4], "code of x", int(code(M[4].reshape(-1,)))) # change state x
+    print(get_current_attractor(M))

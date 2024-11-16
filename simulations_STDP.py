@@ -18,7 +18,7 @@ from source.attractors import *
 # Parameters #
 # ********** #
 
-np.random.seed(95)
+np.random.seed(13)
 verbose = False
 eta_in = 0.15
 plumb = 1
@@ -27,7 +27,7 @@ noise = (-0.1, 0.5)
 input_size = 3000 # Adjust as necessary
 memory, memory_length = 149, 1
 input_dim = 1
-nb_triggers = 19
+nb_triggers = 26
 trigger_length = 10
 
 cwd = os.getcwd()
@@ -52,11 +52,10 @@ def initialize_simulation():
     A_default = np.copy(M[0])
 
     # Create network and automaton from the distorted matrix
-    N_new = matrix_to_net(M[0], M[1], M[2], M[3])
-    A_new = net_to_aut(N_new)
+    A_new = netM_to_aut(M)
 
     # Compute attractors
-    dico_cycles = simple_cycles(A_new)
+    dico_cycles = get_simple_cycles(A_new)
     SCC = largest_list(list(dico_cycles.keys()))
     _, n = dico_cycles[SCC]
 
@@ -70,38 +69,6 @@ def initialize_simulation():
 
     return M, A_default, cycles_list
 
-
-# **************** #
-# Input Generation #
-# **************** #
-
-def generate_input(input_dim=1, input_size=300, nb_triggers=10, trigger_length=10):
-    """
-    Generates a random input stream interspersed with binary trigger patterns.
-
-    Args:
-        input_dim (int): Dimension of each element in the input stream.
-        input_size (int): Length of the input stream.
-        nb_triggers (int): Number of trigger patterns to insert.
-        trigger_length (int): Length of each trigger pattern.
-
-    Returns:
-        tuple: A tuple containing the generated input stream and the list of indices
-               where the trigger patterns end.
-    """
-    # Generate binary trigger pattern
-    pattern = {i: np.random.randint(2, size=input_dim) for i in range(trigger_length)}
-
-    # Generate input stream and insert trigger pattern
-    U = random_input(dim=input_dim, length=input_size) # XXX
-    # U = poisson_input(lamda=5, dim=input_dim, length=input_size)
-
-    trigger_positions = sorted(np.random.randint(1, input_size, nb_triggers))
-    U = mixed_input(U, pattern, trigger_positions)
-
-    # Locate all occurrences of the pattern
-    ticks = find_pattern(pattern, U)
-    return U, [x + len(pattern) - 1 for x in ticks]
 
 # ********** #
 # Simulation #
@@ -143,9 +110,8 @@ def run_simulation(U, ticks, M, A_default, cycles_list):
         x_plus = M[-1].reshape(-1, 1) # new state
 
         # Compute cycles for the current network state
-        N_new = matrix_to_net(M[0], M[1], M[2], M[3])
-        A_new = net_to_aut(N_new)
-        dico_cycles = simple_cycles(A_new)
+        A_new = netM_to_aut(M)
+        dico_cycles = get_simple_cycles(A_new)
         SCC = largest_list(list(dico_cycles.keys()))
         _, n = dico_cycles[SCC]
 
@@ -168,7 +134,7 @@ if __name__ == "__main__":
     M, A_default, cycles_list = initialize_simulation()
     
     # Generate input and run simulation
-    U, ticks = generate_input(input_dim=input_dim, input_size=input_size,
-                                nb_triggers=nb_triggers, trigger_length=trigger_length)
+    U, ticks = generate_input(input_dim=input_dim, input_size=input_size, mode="random", lamda=5, 
+                              triggers=True, nb_triggers=nb_triggers, trigger_length=trigger_length)
     
     run_simulation(U, ticks, M, A_default, cycles_list)

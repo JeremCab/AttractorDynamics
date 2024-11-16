@@ -28,13 +28,26 @@ def linear(x1: float, y1: float, x2: float, y2: float, x: float) -> float:
 # Perturbation of the Weight Matrix #
 # ********************************* #
 
+# def distort(matrix: np.ndarray, noise: tuple[float, float] = (-0.1, 0.1)) -> np.ndarray:
+#     """Randomly distort non-zero weights in a matrix within a noise range."""
+#     for i in range(matrix.shape[0]):
+#         for j in range(matrix.shape[1]):
+#             if matrix[i, j] != 0:
+#                 matrix[i, j] += (noise[1] - noise[0]) * np.random.random_sample() + noise[0]
+#     return matrix
+
 def distort(matrix: np.ndarray, noise: tuple[float, float] = (-0.1, 0.1)) -> np.ndarray:
     """Randomly distort non-zero weights in a matrix within a noise range."""
-    for i in range(matrix.shape[0]):
-        for j in range(matrix.shape[1]):
-            if matrix[i, j] != 0:
-                matrix[i, j] += (noise[1] - noise[0]) * np.random.random_sample() + noise[0]
-    return matrix
+    # Create a mask for non-zero elements
+    non_zero_mask = matrix != 0
+
+    # Generate random noise for each element in the matrix within the specified range
+    noise_matrix = np.random.uniform(noise[0], noise[1], size=matrix.shape)
+
+    # Apply noise only to non-zero elements
+    distorted_matrix = matrix + noise_matrix * non_zero_mask
+
+    return distorted_matrix
 
 # ************************ #
 # Generating Random Inputs #
@@ -132,6 +145,38 @@ def find_pattern(pattern: dict[int, np.ndarray], stream: dict[int, np.ndarray]) 
         if all(np.array_equal(stream[t + i], pattern[i]) for i in range(len(pattern))):
             occurrences.append(t)
     return occurrences
+
+def generate_input(input_dim=1, input_size=300, mode="random", lamda=5, triggers=True, nb_triggers=10, trigger_length=10):
+    """
+    Generates a random input stream interspersed with binary trigger patterns.
+
+    Args:
+        input_dim (int): Dimension of each element in the input stream.
+        input_size (int): Length of the input stream.
+        nb_triggers (int): Number of trigger patterns to insert.
+        trigger_length (int): Length of each trigger pattern.
+
+    Returns:
+        tuple: A tuple containing the generated input stream and the list of indices
+               where the trigger patterns end.
+    """
+
+    # Generate input stream and insert trigger pattern
+    if mode == "random":
+        U = random_input(dim=input_dim, length=input_size)
+    elif mode == "poisson":
+        U = poisson_input(lamda=lamda, dim=input_dim, length=input_size)
+
+    # Generate and insert trigger
+    pattern_ends = []
+    if triggers:
+        pattern = {i: np.random.randint(2, size=input_dim) for i in range(trigger_length)}
+        trigger_positions = sorted(np.random.randint(1, input_size, nb_triggers))
+        U = mixed_input(U, pattern, trigger_positions)
+        ticks = find_pattern(pattern, U)
+        pattern_ends = [x + len(pattern) - 1 for x in ticks]
+
+    return U, pattern_ends
 
 # ******************** #
 # Generating a Network #

@@ -134,7 +134,7 @@ if __name__ == "__main__":
     M, A_default, cycles_list = initialize_simulation()
     
     # Generate input and run simulation
-    U, ticks = generate_input(input_dim=input_dim, input_size=input_size, mode="random", lamda=5, 
+    U, ticks = generate_input(input_dim=input_dim, input_length=input_size, mode="random", lamda=5, 
                               triggers=True, nb_triggers=nb_triggers, trigger_length=trigger_length)
     
     run_simulation(U, ticks, M, A_default, cycles_list)

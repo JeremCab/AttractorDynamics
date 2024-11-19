@@ -1,6 +1,7 @@
 #!/opt/local/bin/python3
 # -*- coding: utf-8 -*-
 
+import random
 import numpy as np
 
 # *********************** #
@@ -27,14 +28,6 @@ def linear(x1: float, y1: float, x2: float, y2: float, x: float) -> float:
 # ********************************* #
 # Perturbation of the Weight Matrix #
 # ********************************* #
-
-# def distort(matrix: np.ndarray, noise: tuple[float, float] = (-0.1, 0.1)) -> np.ndarray:
-#     """Randomly distort non-zero weights in a matrix within a noise range."""
-#     for i in range(matrix.shape[0]):
-#         for j in range(matrix.shape[1]):
-#             if matrix[i, j] != 0:
-#                 matrix[i, j] += (noise[1] - noise[0]) * np.random.random_sample() + noise[0]
-#     return matrix
 
 def distort(matrix: np.ndarray, noise: tuple[float, float] = (-0.1, 0.1)) -> np.ndarray:
     """Randomly distort non-zero weights in a matrix within a noise range."""
@@ -117,6 +110,22 @@ def concatenate(U1: dict[int, np.ndarray], U2: dict[int, np.ndarray]) -> dict[in
 # Generating Inputs with Trigger Pattern #
 # ************************************** #
 
+def generate_ticks(count=20, input_length=1000, pattern_length=20):
+    """
+    Generate K ticks between 0 and the input length separated by at least L time steps, 
+    where L is the pattern's length. The function is problematic in case of an impossible sampling
+    """
+    ticks = []
+    
+    while len(ticks) < count:
+        candidate = random.randint(0, input_length)
+        if all(abs(candidate - num) >= pattern_length for num in ticks):
+            ticks.append(candidate)
+    
+    ticks = sorted(ticks)
+
+    return ticks
+
 def insert(pattern: dict[int, np.ndarray], stream: dict[int, np.ndarray], start: int) -> dict[int, np.ndarray]:
     """Insert pattern into stream at specified start time, overwriting existing values."""
     if start >= len(stream):
@@ -125,13 +134,13 @@ def insert(pattern: dict[int, np.ndarray], stream: dict[int, np.ndarray], start:
         stream[start + i] = pattern[i]
     return stream
 
-def mixed_input(stream: dict[int, np.ndarray], pattern: dict[int, np.ndarray], tics: list[int]) -> dict[int, np.ndarray]:
+def mix_input(stream: dict[int, np.ndarray], pattern: dict[int, np.ndarray], tics: list[int]) -> dict[int, np.ndarray]:
     """Insert pattern at specified time steps in stream."""
     for t in tics:
         insert(pattern, stream, t)
     return stream
 
-def mixed_input2(stream: dict[int, np.ndarray], pattern: dict[int, np.ndarray], interval: int) -> dict[int, np.ndarray]:
+def mix_input2(stream: dict[int, np.ndarray], pattern: dict[int, np.ndarray], interval: int) -> dict[int, np.ndarray]:
     """Insert pattern at regular intervals in stream."""
     pattern_positions = [k * len(stream) // (interval + 1) for k in range(1, interval + 1)]
     for idx, position in enumerate(pattern_positions):
@@ -146,13 +155,13 @@ def find_pattern(pattern: dict[int, np.ndarray], stream: dict[int, np.ndarray]) 
             occurrences.append(t)
     return occurrences
 
-def generate_input(input_dim=1, input_size=300, mode="random", lamda=5, triggers=True, nb_triggers=10, trigger_length=10):
+def generate_input(input_dim=1, input_length=300, mode="random", lamda=5, triggers=True, nb_triggers=10, trigger_length=10):
     """
     Generates a random input stream interspersed with binary trigger patterns.
 
     Args:
         input_dim (int): Dimension of each element in the input stream.
-        input_size (int): Length of the input stream.
+        input_length (int): Length of the input stream.
         nb_triggers (int): Number of trigger patterns to insert.
         trigger_length (int): Length of each trigger pattern.
 
@@ -163,20 +172,20 @@ def generate_input(input_dim=1, input_size=300, mode="random", lamda=5, triggers
 
     # Generate input stream and insert trigger pattern
     if mode == "random":
-        U = random_input(dim=input_dim, length=input_size)
+        U = random_input(dim=input_dim, length=input_length)
     elif mode == "poisson":
-        U = poisson_input(lamda=lamda, dim=input_dim, length=input_size)
+        U = poisson_input(lamda=lamda, dim=input_dim, length=input_length)
 
     # Generate and insert trigger
     pattern_ends = []
+
     if triggers:
         pattern = {i: np.random.randint(2, size=input_dim) for i in range(trigger_length)}
-        trigger_positions = sorted(np.random.randint(1, input_size, nb_triggers))
-        U = mixed_input(U, pattern, trigger_positions)
-        ticks = find_pattern(pattern, U)
-        pattern_ends = [x + len(pattern) - 1 for x in ticks]
+        triggers = generate_ticks(nb_triggers, len(U), trigger_length)
+        U = mix_input(U, pattern, triggers)
+        # pattern_ends = [x + len(pattern) - 1 for x in ticks]
 
-    return U, pattern_ends
+    return U, triggers
 
 # ******************** #
 # Generating a Network #
@@ -211,10 +220,21 @@ def generate_network(nb_inputs: int, nb_nodes: int, nb_input_connections: int = 
 
 if __name__ == "__main__":
 
-    # Test Poisson inputs
-    p = poisson_input()
-    print("Poisson inout stream:\n", p)
-    
+    # Test inputs
+    U, ticks = generate_input(input_dim=1, 
+                              input_length=1000, 
+                              mode="poisson", 
+                              lamda=3, 
+                              triggers=True, 
+                              nb_triggers=20, 
+                              trigger_length=20)
+    print(ticks)
+    inputs = [int(x.item()) for x in list(U.values()) ]
+    print("Input stream:\n", inputs)
+    for t in ticks:
+        print(t)
+        print(inputs[t:t+20])
+
     # Test attractors
     # from attractors import * # XXX import problem
 

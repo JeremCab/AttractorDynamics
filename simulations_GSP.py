@@ -224,7 +224,7 @@ def simulated_annealing(initial_solution, func, max_iterations, initial_temp, co
     return best_solution, best_energy, temperature
 
 
-nb_iter = 100         # Number of iterations
+nb_iter = 100        # Number of iterations
 temperature = 10.0   # Initial temperature
 cooling_rate = 0.99  # Cooling rate (close to 1 means slower cooling)
 
@@ -254,5 +254,3 @@ if __name__ == "__main__":
         M, best_energy, temperature = simulated_annealing(M, attractor_energy,
                                                           nb_iter, temperature,
                                                           cooling_rate)
-
-    

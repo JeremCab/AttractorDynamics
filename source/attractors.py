@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
 
-if __name__ != "__main__":
-    from source.rnn_simulator import simulation
-    import source.TarjanJohnson as tj
-else:
-    from rnn_simulator import simulation
-    import TarjanJohnson as tj
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent))
+
+import numpy as np
+from rnn_simulator import simulation
+import TarjanJohnson as tj
+
 
 # **************************** #
 # Encoding and Decoding Binary #
@@ -246,6 +247,15 @@ def get_current_attractor(matrices):
             return {SCC: dico_cycles[SCC]}
         return None
 
+def get_largest_attractor(matrices):
+    """
+    Computes the largest attractor of a network given in matricial form.
+    The attractor is returned as a dico of the form  {SCC : (tuple_of_cycles, number_of_cycles)}
+    """
+    dico_cycles = get_attractors(matrices)
+    dico_cycles_sorted = sorted(dico_cycles.items(), key=lambda x:x[1][1])
+    max_cycle = dict(dico_cycles_sorted)
+    return max_cycle
 
 
 # *********************** #
@@ -253,7 +263,7 @@ def get_current_attractor(matrices):
 # *********************** #
 
 if __name__ == "__main__":
-
+    
     # Graph dictionary
     V = [1,2,3,4]
     E = [ [(1,3), 0.3], [(1,5), 0.1],  [(2,1), 0.7], [(2,2), 0.9], [(2,4), 0.5], 
@@ -345,10 +355,15 @@ if __name__ == "__main__":
     print("\nCycles of A")
     cycles = get_simple_cycles(A)
     print(cycles)
-    print("\Attractors of N")
+
+    print("\nAttractors of N")
     attractors = get_attractors(M)
     print(attractors)
-    print("\Attractor of N containing state x")
+
+    print("\nAttractor of N containing state x")
     M[4] = np.array([1., 1., 0., 1.]).reshape(-1, 1)
     print("x", M[4], "code of x", int(code(M[4].reshape(-1,)))) # change state x
     print(get_current_attractor(M))
+
+    print("\nLargest attractor of N")
+    print(get_largest_attractor(M))

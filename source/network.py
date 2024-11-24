@@ -1,7 +1,6 @@
 #!/opt/local/bin/python3
 # -*- coding: utf-8 -*-
 
-import random
 import numpy as np
 
 # *********************** #
@@ -29,16 +28,32 @@ def linear(x1: float, y1: float, x2: float, y2: float, x: float) -> float:
 # Perturbation of the Weight Matrix #
 # ********************************* #
 
-def distort(matrix: np.ndarray, noise: tuple[float, float] = (-0.1, 0.1)) -> np.ndarray:
-    """Randomly distort non-zero weights in a matrix within a noise range."""
+def distort(matrix: np.ndarray, 
+            noise: float = 0.1, 
+            min_max: tuple[float, float] = (-3.0, 3.0)) -> np.ndarray:
+    """
+    Randomly distort non-zero weights in a matrix within a noise range.
+    The signs of the weights are preserved: a positive (negative) weight stays so.
+    Clip values between min and max.
+    """
     # Create a mask for non-zero elements
     non_zero_mask = matrix != 0
 
-    # Generate random noise for each element in the matrix within the specified range
-    noise_matrix = np.random.uniform(noise[0], noise[1], size=matrix.shape)
+    # Generate random noise for elements in the matrix within specified range
+    noise_matrix = np.random.uniform(-noise, noise, size=matrix.shape)
+    noise_matrix = noise_matrix * non_zero_mask
 
     # Apply noise only to non-zero elements
-    distorted_matrix = matrix + noise_matrix * non_zero_mask
+    distorted_matrix = matrix + noise_matrix
+
+    # Keep same signs
+    diff_signs = (distorted_matrix * matrix) < 0
+    distorted_matrix[diff_signs] = matrix[diff_signs]
+
+    # Clip values
+    mini, maxi = min_max[0], min_max[1]
+    distorted_matrix = np.maximum(distorted_matrix, non_zero_mask * mini)
+    distorted_matrix = np.minimum(distorted_matrix, non_zero_mask * maxi)
 
     return distorted_matrix
 
@@ -110,16 +125,21 @@ def concatenate(U1: dict[int, np.ndarray], U2: dict[int, np.ndarray]) -> dict[in
 # Generating Inputs with Trigger Pattern #
 # ************************************** #
 
-def generate_ticks(count=20, input_length=1000, pattern_length=20):
+def generate_ticks(count=20, pattern_length=20, input_length=1000):
     """
-    Generate K ticks between 0 and the input length separated by at least L time steps, 
-    where L is the pattern's length. The function is problematic in case of an impossible sampling
+    Generate K=count ticks between 0 and the N=input_length 
+    separated by at least L=pattern_length time steps. 
+    The function is problematic in case of impossible sampling...
     """
     ticks = []
     
-    while len(ticks) < count:
-        candidate = random.randint(0, input_length)
-        if all(abs(candidate - num) >= pattern_length for num in ticks):
+    # avoid tick generation if sequence is too short
+    flag = (input_length > 2 * count * pattern_length)
+
+    while flag and len(ticks) < count:
+        candidate = np.random.randint(low=5, high=input_length, size=(1)) # 5 warning time steps minimum
+        candidate = int(candidate)
+        if all(abs(candidate - num) > pattern_length for num in ticks):
             ticks.append(candidate)
     
     ticks = sorted(ticks)
@@ -176,14 +196,10 @@ def generate_input(input_dim=1, input_length=300, mode="random", lamda=5, trigge
     elif mode == "poisson":
         U = poisson_input(lamda=lamda, dim=input_dim, length=input_length)
 
-    # Generate and insert trigger
-    pattern_ends = []
-
     if triggers:
         pattern = {i: np.random.randint(2, size=input_dim) for i in range(trigger_length)}
-        triggers = generate_ticks(nb_triggers, len(U), trigger_length)
+        triggers = generate_ticks(nb_triggers, trigger_length, len(U))
         U = mix_input(U, pattern, triggers)
-        # pattern_ends = [x + len(pattern) - 1 for x in ticks]
 
     return U, triggers
 
@@ -219,21 +235,31 @@ def generate_network(nb_inputs: int, nb_nodes: int, nb_input_connections: int = 
 # *********************** #
 
 if __name__ == "__main__":
+    
+    pass
+    # # Test distort
+    # A = np.random.normal(size=(5,5))
+    # mask = np.abs(A) > 0.8
+    # A = A * mask
+    # A_d = distort(A, noise=10.)
+    # print("A", A)
+    # print("A distorted", A_d)
+    # print("Check same signs", A * A_d >= 0)
 
-    # Test inputs
-    U, ticks = generate_input(input_dim=1, 
-                              input_length=1000, 
-                              mode="poisson", 
-                              lamda=3, 
-                              triggers=True, 
-                              nb_triggers=20, 
-                              trigger_length=20)
-    print(ticks)
-    inputs = [int(x.item()) for x in list(U.values()) ]
-    print("Input stream:\n", inputs)
-    for t in ticks:
-        print(t)
-        print(inputs[t:t+20])
+    # # Test inputs
+    # U, ticks = generate_input(input_dim=1, 
+    #                           input_length=1000, 
+    #                           mode="poisson", 
+    #                           lamda=3, 
+    #                           triggers=True, 
+    #                           nb_triggers=20, 
+    #                           trigger_length=20)
+    # print(ticks)
+    # inputs = [int(x.item()) for x in list(U.values()) ]
+    # print("Input stream:\n", inputs)
+    # for t in ticks:
+    #     print(t)
+    #     print(inputs[t:t+20])
 
     # Test attractors
     # from attractors import * # XXX import problem

@@ -49,7 +49,7 @@ sigma = np.vectorize(sigma, otypes=[np.ndarray])
 # STDP Rule #
 # ********* #
 
-def STDP(A, x_tminus1, x_t, A_init, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
+def STDP_old(A, x_tminus1, x_t, A_init, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
     """
     Applies a targeted STDP (Spike-Timing Dependent Plasticity) rule to non-interactive connections in matrix A.
     
@@ -73,14 +73,60 @@ def STDP(A, x_tminus1, x_t, A_init, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
                 eta_modified = eta * factor
                 # Calculate the new weight with STDP adjustments
                 temp_weight = A[j,i] + eta_modified * (x_t[i].item() * x_tminus1[j].item() - plumb * x_tminus1[i].item() * x_t[j].item())
-
                 # Clip the weight within bounds defined by A_init and bounds parameter
                 A[j,i] = np.clip(temp_weight, A_init[j,i] + bounds[0], A_init[j,i] + bounds[1])
-
                 if A[j][i] == 0:
                     print("Connection dead...")
 
     return A
+
+
+def STDP(A, x_tminus1, x_t, A_init, eta=0.01, plumb=1, bounds=(-0.5, 0.5)):
+    """
+    Applies a targeted STDP (Spike-Timing Dependent Plasticity) rule to non-interactive connections in matrix A.
+    Vectorized version.
+    Args:
+        A (np.ndarray): Current weight matrix.
+        x_tminus1 (np.ndarray): State vector at time t-1.
+        x_t (np.ndarray): State vector at time t.
+        A_init (np.ndarray): Default (initial) weight matrix for bounding weight changes.
+        eta (float, optional): Learning rate for STDP. Defaults to 0.01.
+        plumb (float, optional): Coefficient favoring weight decrease. Defaults to 1.
+        bounds (tuple, optional): Tuple of lower and upper bounds for weight changes. Defaults to (-0.5, 0.5).
+
+    Returns:
+        np.ndarray: Updated weight matrix A.
+    """
+    # Ensure all inputs are numeric arrays
+    A = A.astype(np.float64)
+    x_tminus1 = x_tminus1.astype(np.int16)
+    x_t = x_t.astype(np.int16)
+    A_init = A_init.astype(np.float64)
+
+    # Generate random factors for eta modification
+    random_factors = np.random.uniform(0.95, 1.05, size=A.shape)
+    eta_modified = eta * random_factors
+
+    # Compute STDP updates
+    delta_weights = eta_modified * (
+        np.outer(x_tminus1, x_t) - plumb * np.outer(x_t, x_tminus1)
+    )
+
+    # Apply updates only to non-zero elements of A
+    mask_nonzero = A != 0
+    A[mask_nonzero] += delta_weights[mask_nonzero]
+
+    # Clip weights within the bounds defined by A_init and the provided bounds
+    lower_bounds = A_init + bounds[0]
+    upper_bounds = A_init + bounds[1]
+    A = np.clip(A, lower_bounds, upper_bounds)
+
+    # Check for "dead" connections (optional debugging print)
+    if np.any(A[mask_nonzero] == 0):
+        print("Connection dead...")
+
+    return A
+
 
 # ******** #
 # GSP Rule #
@@ -111,38 +157,6 @@ def StochasticSynapses(A_init, mu_A, sigma2_A, bounds=(-0.5, 0.5)):
     
     return A_init, A, mu_A, sigma2_A
 
-def GSP(A_init, A_minus1, A, mu_A, sigma2_A, eta=0.1, reward=0, bounds=(-0.5, 0.5)):
-    """
-    Applies a global stochastic plasticity rule to (non-interactive) connections in matrix A.
-    if the reward is positive, then the mean is shifted towards tthe direction of A_minus1 -> A
-    and the std is decreased. Then, a new weight matrix A is samples according to this new mean and std.
-    Otherwise, A remains unchanged.
-    
-    Args:
-        A_init (np.ndarray): Default (initial) weight matrix for bounding weight changes.
-        A (np.ndarray): Weight matrix at current time step.
-        A_minus1 (np.ndarray): Weight matrix at previous time step.
-        mu_A (np.ndarray): Current matrix of means w.r.t. which the new weights have been sampled.
-        sigma2_A (np.ndarray): Current matrix of variances w.r.t. which the new weights have been be sampled.
-        reward (float): Postive learning rate.
-        reward (float): Postive reward.
-        bounds (tuple, optional): Tuple of lower and upper bounds for weight changes. Defaults to (-0.5, 0.5).
-
-    Returns:
-        list: List of original weights, updated weights, updated means, and updated stds.
-    """
-        
-    if reward > 0:
-
-        A_diff_sign = ((A_minus1 - A) > 0) * 2 - 1
-
-        # XXX this rule can be more sophisticated
-        mu_A = mu_A + (eta * A_diff_sign)                    # update mean (shifting)
-        sigma2_A = np.maximum(sigma2_A - eta * sigma2_A, 0)  # update std (decreasing)
-
-        A_init, A, mu_A, sigma2_A = StochasticSynapses(A_init, mu_A, sigma2_A, bounds=(-0.5, 0.5))
-
-    return [A_init, A, mu_A, sigma2_A]
 
 # ********* #
 # Simulator #
@@ -168,24 +182,23 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
     dim = B1.shape[0] + x.shape[0]                        # Calculate state space dimension
     history = np.zeros([dim, epoch])                      # Initialize history with dummy states
     synapses = np.zeros([x.shape[0], x.shape[0], epoch])  # Initialize synapses with dummy states
-    synapses[:, :, 0] = A
-    
+    # synapses[:, :, 0] = A # xxx old
+    synapses = np.zeros([A.shape[0], A.shape[1], epoch])  # xxx new 
+
     for i in range(epoch):
         # Retrieve or initialize input for current time step
         u = U.get(i, np.zeros([B1.shape[0], 1]))  
-        u = theta(np.dot(B2.T, x) + u)             # Processed input after interactive signal
+        u = theta(np.dot(B2.T, x) + u)                        # Processed input after interactive signal
         
         # Compute the new internal state
         x_plus = theta(np.dot(A.T, x) + np.dot(B1.T, u) + b)
-        history[:, i] = np.vstack([u, x]).reshape(-1)
-
+        history[:, i] = np.vstack([u, x_plus]).reshape(-1)    # new: we stack previous input and current state
         # Apply STDP if enabled
+        A_tmp = A.copy()
         if stdp != "off":
-            A = STDP(A, x, x_plus, stdp[0], stdp[1], stdp[2], stdp[3])
+            A = STDP(A, x, x_plus, stdp[0], stdp[1], stdp[2], stdp[3])   # new STDP vectorized
         synapses[:, :, i] = A
-
         x = x_plus  # Update state for the next iteration
-    
     # Remove the initial dummy state and return the state history and final matrices
     return history, synapses, [np.copy(A), np.copy(B1), np.copy(B2), np.copy(b), x]
 
@@ -215,13 +228,16 @@ if __name__ == "__main__":
     # U = random_input(dim=2, length=100)
     U = {t: np.random.randint(2, size=(1, 1)) for t in range(1)}
 
-    history, synapses, matrices = simulation(A_initial, B1, B2, b, x, U, epoch=20, stdp=[A_initial, 0.1, 1, (-0.5, 0.5)])
+    ep = 20
+    history, synapses, matrices = simulation(A_initial, B1, B2, b, x, U, epoch=ep, stdp=[A_initial, 0.1, 1, (-0.5, 0.5)])
     print("********* U *********\n", U)
     print("********* history *********\n", history)
+    print(history.shape)
     print("********* A_initial *********\n", A_initial)
     print("********* synapses *********\n")
-    for i in range(20):
+    for i in range(ep):
         print(synapses[:, :, i])
+    print(synapses.shape)
     print("********* A *********\n", matrices[0])
     print("********* B1 *********\n", matrices[1])
     print("********* B2 *********\n", matrices[2])

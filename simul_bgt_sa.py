@@ -20,21 +20,21 @@ from optim.simulated_annealing import *
 
 # Parameters
 # Modes:
-# gp        -> global plasticity
-# stdp      -> spike-timing ddependent plalsticity
-# stdp-gp   -> combined mode
+# gp       ->  global plasticity
+# stdp     ->  spike-timing ddependent plasticity
+# stdp-gp  ->  combined mode
 mode = "stdp-gp"  # "gp" "stdp" "stdp-gp"
 
-seed = 42
+seed = 45 # 42
 np.random.seed(seed)
 
-input_length = 1000 # 3000
-trigger_length = 20
-nb_triggers = 20
+input_length = 1001 # 3000
+trigger_length = 50
+nb_triggers = 10
 temperature = 10.0    # Initial temperature
 cooling_rate = 0.995  # Cooling rate (close to 1 means slower cooling)
 
-eta = 0.15
+eta = 0.025
 plumb = 1
 bounds = (-0.4999, 1.4999)  # clipping values for STDP
 noise = 0.3                 # noise for SA 
@@ -63,7 +63,7 @@ U, ticks = generate_input(input_dim=M[1].shape[0],
                           triggers=True, 
                           nb_triggers=nb_triggers,
                           trigger_length=trigger_length)
-
+print(ticks)
 # ********** #
 # Simulation #
 # ********** #
@@ -126,14 +126,14 @@ if __name__ == "__main__":
         U_b = dict([(k, v) for k, v in U.items() if k in b])
         print("STDP in process (initial)...")
         A = M[0].copy() # dummy var for testing XXX
-        _, synapses, M = simulation(M[0], M[1], M[2], M[3], M[4], 
+        history, synapses, M = simulation(M[0], M[1], M[2], M[3], M[4], 
                                     U_b,
                                     epoch=len(b),     # len(b) iterations
                                     stdp=[M[0], eta, plumb, bounds])
 
         attrs = get_nb_attractors(synapses, M)
         nb_attractors.extend(attrs)
-        print("    -> STDP   changed M[0]:", (A != M[0]).any())
+        print("    -> STDP changed M[0]:", (A != M[0]).any())
 
         # subsequent input blocks
         for i, b in enumerate(input_blocks[1:]):
@@ -147,36 +147,38 @@ if __name__ == "__main__":
             print("GP in process...")
             A = M[0].copy() # dummy var for testing XXX
             sim = simulated_annealing(initial_solution=M, 
-                                    func=attractor_energy, 
-                                    max_iterations=len(b0),  # 1 iteration ??? XXX
-                                    initial_temp=temperature, 
-                                    cooling_rate=cooling_rate, 
-                                    noise=noise, 
-                                    state_aware=True, 
-                                    verbose=False)
+                                      func=attractor_energy, 
+                                      max_iterations=len(b0),  # b0 steps
+                                      initial_temp=temperature, 
+                                      cooling_rate=cooling_rate, 
+                                      noise=noise, 
+                                      state_aware=True, 
+                                      verbose=False)
                 
             best_energies, temps, M = sim
             best_energy = max(best_energies)
             temperature = temps[-1]
-            nb_attractors.extend(best_energies)
-            print("    -> GP   best_energies", best_energies)
+            nb_attractors.extend(-np.array(best_energies))
             print("    -> GP   changed M[0]:", (A != M[0]).any())
+            print("    -> CURRENT ATTRACTORS\n", nb_attractors)
 
             # STDP (input block sufix)
             print("STDP in process...")
             A = M[0].copy() # dummy var for testing XXX
-            _, synapses, M = simulation(M[0], M[1], M[2], M[3], M[4], 
-                                        U_b1,
-                                        epoch=len(b1),     # len(b1) iterations xxx
-                                        stdp=[M[0], eta, plumb, bounds])
+
+            # NOTE: for a proper functioning of the `simulation` function, 
+            # the ticks of U_b1 need to be rescaled between 0 and len(U_b1).
+            U_b1 = {kk: U_b1[k] for kk, k in enumerate(sorted(U_b1.keys()))}  # rekey U_b1
+
+            history, synapses, M = simulation(M[0], M[1], M[2], M[3], M[4], 
+                                              U_b1,
+                                              epoch=len(b1),  # b1 steps
+                                              stdp=[M[0], eta, plumb, bounds])
             
             attrs = get_nb_attractors(synapses, M)
             nb_attractors.extend(attrs)
-            print("    -> STDP   best_energies", best_energies)
-            print("    -> STDP   changed M[0]:", (A != M[0]).any())
-            print("    -> synaptic steps", synapses.shape[2])
+            print("    -> STDP changed M[0]:", (A != M[0]).any())
             print("    -> CURRENT ATTRACTORS\n", nb_attractors)
-            # print(f"Step {i}: (M[0]", M[0])
             # attractors_lengths = get_nb_attractors(synapses, M)
 
         # print("Simulation done.")

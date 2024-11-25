@@ -74,14 +74,16 @@ def simulated_annealing(initial_solution, func,
         # Generate a new candidate solution
         # Ensure candidate is within bounds: clip values???
         candidate = generate_candidate(current_solution=current_solution, 
-                                       noise=noise, state_aware=state_aware)
+                                       noise=noise, 
+                                       state_aware=state_aware)
+        
         candidate_energy = func(candidate)
         
         # Calculate the energy difference
         energy_diff = candidate_energy - current_energy
         
-        # Accept candidate if it's better or
-        # with a probability that decreases with temperature
+        # Accept candidate solution if it's better or with
+        # a probability that decreases with temperature.
         if energy_diff < 0 or np.exp(-energy_diff / temp) > np.random.rand():
             current_solution = candidate[:]
             current_energy = candidate_energy

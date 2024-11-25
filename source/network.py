@@ -134,12 +134,16 @@ def generate_ticks(count=20, pattern_length=20, input_length=1000):
     ticks = []
     
     # avoid tick generation if sequence is too short
-    flag = (input_length > 2 * count * pattern_length)
+    flag = (input_length > 2 * count * pattern_length) # 2 is arbitrary...
 
     while flag and len(ticks) < count:
-        candidate = np.random.randint(low=5, high=input_length, size=(1)) # 5 warning time steps minimum
+        
+        # 5 warming time steps minimum
+        candidate = np.random.randint(low=5, high=input_length, size=(1))
         candidate = int(candidate)
+        
         if all(abs(candidate - num) > pattern_length for num in ticks):
+
             ticks.append(candidate)
     
     ticks = sorted(ticks)
@@ -148,31 +152,42 @@ def generate_ticks(count=20, pattern_length=20, input_length=1000):
 
 def insert(pattern: dict[int, np.ndarray], stream: dict[int, np.ndarray], start: int) -> dict[int, np.ndarray]:
     """Insert pattern into stream at specified start time, overwriting existing values."""
+
     if start >= len(stream):
         return False
+    
     for i in range(len(pattern)):
         stream[start + i] = pattern[i]
+
     return stream
 
 def mix_input(stream: dict[int, np.ndarray], pattern: dict[int, np.ndarray], tics: list[int]) -> dict[int, np.ndarray]:
     """Insert pattern at specified time steps in stream."""
+
     for t in tics:
         insert(pattern, stream, t)
+
     return stream
 
 def mix_input2(stream: dict[int, np.ndarray], pattern: dict[int, np.ndarray], interval: int) -> dict[int, np.ndarray]:
     """Insert pattern at regular intervals in stream."""
+
     pattern_positions = [k * len(stream) // (interval + 1) for k in range(1, interval + 1)]
+
     for idx, position in enumerate(pattern_positions):
         insert(pattern, stream, position + idx * len(pattern))
+
     return stream
 
 def find_pattern(pattern: dict[int, np.ndarray], stream: dict[int, np.ndarray]) -> list[int]:
     """Find occurrences of a pattern in a stream and return starting positions."""
+
     occurrences = []
+
     for t in range(len(stream) - len(pattern) + 1):
         if all(np.array_equal(stream[t + i], pattern[i]) for i in range(len(pattern))):
             occurrences.append(t)
+
     return occurrences
 
 def generate_input(input_dim=1, input_length=300, mode="random", lamda=5, triggers=True, nb_triggers=10, trigger_length=10):

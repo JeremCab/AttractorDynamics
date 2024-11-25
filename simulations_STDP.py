@@ -39,7 +39,8 @@ output_file = os.path.join(cwd, "runs", f"new_simul_{nb_triggers}.csv")
 # ***************************** #
 
 def initialize_simulation():
-    """Initializes the simulation components: network, matrix, weight distortions, and attractors."""
+    """Initializes the simulation components: 
+    network, matrix, weight distortions, and attractors."""
 
     # Generate BGT network and matrix
     N = (input_nodes_N, nodes_N, edges_N)

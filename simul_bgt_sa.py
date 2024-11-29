@@ -23,14 +23,14 @@ from optim.simulated_annealing import *
 # gp       ->  global plasticity
 # stdp     ->  spike-timing ddependent plasticity
 # stdp-gp  ->  combined mode
-mode = "stdp-gp"  # "gp" "stdp" "stdp-gp"
+mode = "gp"  # "gp" "stdp" "stdp-gp"
 
 seed = 45 # 42
 np.random.seed(seed)
 
 input_length = 1001 # 3000
-trigger_length = 50
-nb_triggers = 10
+trigger_length = 10 # 50 # XXX
+nb_triggers = 3     # 10 # XXX
 temperature = 10.0    # Initial temperature
 cooling_rate = 0.995  # Cooling rate (close to 1 means slower cooling)
 
@@ -42,7 +42,10 @@ noise = 0.3                 # noise for SA 
 cwd = os.getcwd()
 results_folder = "runs"
 results_folder = os.path.join(cwd, results_folder)
-results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}.pkl"
+if mode == "stdp" or mode == "gp":
+    results_file = f"sim_{mode}_{input_length}_seed{seed}.pkl"
+elif mode == "stdp-gp":
+    results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"
 results_file = os.path.join(results_folder, results_file)
 
 # ************** #
@@ -63,7 +66,6 @@ U, ticks = generate_input(input_dim=M[1].shape[0],
                           triggers=True, 
                           nb_triggers=nb_triggers,
                           trigger_length=trigger_length)
-print(ticks)
 # ********** #
 # Simulation #
 # ********** #
@@ -73,7 +75,7 @@ if __name__ == "__main__":
     print("*" * 100)
     print("Simulation started...")
 
-    # *** GP only ***
+    # *** GP only *** #
     if mode == "gp":
 
         sim = simulated_annealing(initial_solution=M, 
@@ -88,9 +90,9 @@ if __name__ == "__main__":
         with open(results_file, "wb") as fh:
             pickle.dump(sim, fh)
         
-        print("Results saved.")
+        print(f"Results saved: {results_file}")
 
-    # *** STDP only ***
+    # *** STDP only *** #
     elif mode == "stdp":
 
         _, synapses, _ = simulation(M[0], M[1], M[2], M[3], M[4], 
@@ -99,15 +101,19 @@ if __name__ == "__main__":
                                     stdp=[M[0], eta, plumb, bounds])
         
         print("Simulation done.")
-            
+
         nb_attractors = get_nb_attractors(synapses, M)
 
+        synapses_l = [synapses[:, :, i] for i in range(synapses.shape[2])]
+
+        results = (nb_attractors, synapses_l)
+
         with open(results_file, "wb") as fh:
-            pickle.dump(nb_attractors, fh)
+            pickle.dump(results, fh)
         
-        print("Results saved.")
+        print(f"Results saved: {results_file}")
         
-    # *** combined STDP and GP ***
+    # *** combined STDP and GP *** #
     if mode == "stdp-gp":
         
         t0 = 0
@@ -117,7 +123,10 @@ if __name__ == "__main__":
             t0_t1 = list(range(t0, t))
             input_blocks.append(t0_t1)
             t0 = t
+        last_block = list(range(t0, input_length))
+        input_blocks.append(last_block)
 
+        synapses_l = []
         nb_attractors = []
 
         # 1st input block
@@ -125,7 +134,7 @@ if __name__ == "__main__":
         b = input_blocks[0]
         U_b = dict([(k, v) for k, v in U.items() if k in b])
         print("STDP in process (initial)...")
-        A = M[0].copy() # dummy var for testing XXX
+        A = M[0].copy() # dummy var for checking syn. change
         history, synapses, M = simulation(M[0], M[1], M[2], M[3], M[4], 
                                     U_b,
                                     epoch=len(b),     # len(b) iterations
@@ -133,6 +142,10 @@ if __name__ == "__main__":
 
         attrs = get_nb_attractors(synapses, M)
         nb_attractors.extend(attrs)
+
+        synapses = [synapses[:, :, i] for i in range(synapses.shape[2])]
+        synapses_l.extend(synapses)
+
         print("    -> STDP changed M[0]:", (A != M[0]).any())
 
         # subsequent input blocks
@@ -145,7 +158,7 @@ if __name__ == "__main__":
 
             # GP (input block prefix)
             print("GP in process...")
-            A = M[0].copy() # dummy var for testing XXX
+            A = M[0].copy() # dummy var for checking syn. change
             sim = simulated_annealing(initial_solution=M, 
                                       func=attractor_energy, 
                                       max_iterations=len(b0),  # b0 steps
@@ -154,17 +167,23 @@ if __name__ == "__main__":
                                       noise=noise, 
                                       state_aware=True, 
                                       verbose=False)
-                
+
             best_energies, temps, M = sim
-            best_energy = max(best_energies)
+
+            # best_energy = max(best_energies)
             temperature = temps[-1]
-            nb_attractors.extend(-np.array(best_energies))
+            best_energies = list(-np.array(best_energies))
+            nb_attractors.extend(best_energies)
+
+            synapses = [A]*(len(b0) - 1) + [M[0]]
+            synapses_l.extend(synapses)
+
             print("    -> GP   changed M[0]:", (A != M[0]).any())
-            print("    -> CURRENT ATTRACTORS\n", nb_attractors)
+            # print("    -> CURRENT ATTRACTORS\n", nb_attractors)
 
             # STDP (input block sufix)
             print("STDP in process...")
-            A = M[0].copy() # dummy var for testing XXX
+            A = M[0].copy() # dummy var for checking syn. change
 
             # NOTE: for a proper functioning of the `simulation` function, 
             # the ticks of U_b1 need to be rescaled between 0 and len(U_b1).
@@ -174,16 +193,20 @@ if __name__ == "__main__":
                                               U_b1,
                                               epoch=len(b1),  # b1 steps
                                               stdp=[M[0], eta, plumb, bounds])
-            
-            attrs = get_nb_attractors(synapses, M)
+
+            attrs = get_nb_attractors(synapses, M)[1:] # XXX # first already computed in previous step
             nb_attractors.extend(attrs)
+
+            synapses = [synapses[:, :, i] for i in range(synapses.shape[2])]
+            synapses_l.extend(synapses)
+
             print("    -> STDP changed M[0]:", (A != M[0]).any())
-            print("    -> CURRENT ATTRACTORS\n", nb_attractors)
-            # attractors_lengths = get_nb_attractors(synapses, M)
+            # print("    -> CURRENT ATTRACTORS\n", nb_attractors)
 
         # print("Simulation done.")
 
         with open(results_file, "wb") as fh:
-            pickle.dump([nb_attractors, ticks], fh)
-    
-        print("Results saved.")
+            pickle.dump((nb_attractors, ticks, synapses_l), fh)
+
+        print(f"Simulation ended.")
+        print(f"Results saved: {results_file}")

@@ -57,7 +57,7 @@ def run_grid_search():
     cooling_rates = [0.995]                           # fixed
     etas = [0.025]                                    # fixed
     plumbs = [1.0]                                    # fixed
-    bounds = ["minus0.4999,1.4999")]                  # fixed
+    bounds = ["minus0.4999,1.4999"]                   # fixed
     noises = [0.3]                                    # fixed
 
     # Generate all combinations of parameters using itertools.product

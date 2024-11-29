@@ -7,7 +7,9 @@
 import os
 import numpy as np
 import pickle
-from tqdm import tqdm
+# from tqdm import tqdm
+
+import argparse
 
 from source.bgt_network import *
 from source.network import *
@@ -18,34 +20,53 @@ from optim.simulated_annealing import *
 # Parameters #
 # ********** #
 
-# Parameters
-# Modes:
-# gp       ->  global plasticity
-# stdp     ->  spike-timing ddependent plasticity
-# stdp-gp  ->  combined mode
-mode = "gp"  # "gp" "stdp" "stdp-gp"
+# Create argument parser
+parser = argparse.ArgumentParser(description="Run experiment with varying parameters.")
 
-seed = 45 # 42
+# Add arguments for each parameter
+parser.add_argument("--mode", type=str, default="stdp", choices=["gp", "stdp", "stdp-gp"],
+                    help="Choose the mode: 'gp', 'stdp', or 'stdp-gp'. Default is 'stdp'.")
+parser.add_argument("--input_length", type=int, default=1001, help="Length of input sequence. Default is 1001.")
+parser.add_argument("--trigger_length", type=int, default=50, help="Length of trigger. Default is 50.")
+parser.add_argument("--nb_triggers", type=int, default=10, help="Number of triggers. Default is 10.")
+parser.add_argument("--seed", type=int, default=42, help="Random seed. Default is 42.")
+parser.add_argument("--temperature", type=float, default=10.0, help="Initial temperature. Default is 10.0.")
+parser.add_argument("--cooling_rate", type=float, default=0.995, help="Cooling rate. Default is 0.995.")
+parser.add_argument("--eta", type=float, default=0.025, help="STDP learning rate eta. Default is 0.025.")
+parser.add_argument("--plumb", type=float, default=1.0, help="STDP plumb value. Default is 1.")
+parser.add_argument("--bounds", type=str, default="-0.4999,1.4999", 
+                    help="STDP bounds as a string. Default is 'minus0.4999,1.4999' ('-' sign causes problems).")
+parser.add_argument("--noise", type=float, default=0.3, help="Noise for SA. Default is 0.3.")
+
+# Parse the arguments
+args = parser.parse_args()
+
+# Set parameters
+seed = args.seed
+mode = args.mode
+input_length = args.input_length
+trigger_length = args.trigger_length
+nb_triggers = args.nb_triggers
+temperature = args.temperature
+cooling_rate = args.cooling_rate
+eta = args.eta
+plumb = args.plumb
+bounds = [float(x.replace("minus", "-")) for x in args.bounds.split(",")]  # string -> tuple of floats # XXX
+noise = args.noise
+
+# Set random seed
 np.random.seed(seed)
 
-input_length = 1001 # 3000
-trigger_length = 10 # 50 # XXX
-nb_triggers = 3     # 10 # XXX
-temperature = 10.0    # Initial temperature
-cooling_rate = 0.995  # Cooling rate (close to 1 means slower cooling)
-
-eta = 0.025
-plumb = 1
-bounds = (-0.4999, 1.4999)  # clipping values for STDP
-noise = 0.3                 # noise for SA 
-
+# Results file
 cwd = os.getcwd()
 results_folder = "runs"
 results_folder = os.path.join(cwd, results_folder)
+
 if mode == "stdp" or mode == "gp":
     results_file = f"sim_{mode}_{input_length}_seed{seed}.pkl"
 elif mode == "stdp-gp":
     results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"
+
 results_file = os.path.join(results_folder, results_file)
 
 # ************** #

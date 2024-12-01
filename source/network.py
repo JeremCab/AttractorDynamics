@@ -142,7 +142,8 @@ def generate_ticks(count=20, pattern_length=20, input_length=1000):
         candidate = np.random.randint(low=5, high=input_length, size=(1))
         candidate = int(candidate)
         
-        if all(abs(candidate - num) > pattern_length for num in ticks):
+        if (candidate + pattern_length <= input_length) and \
+            all(abs(candidate - num) > pattern_length for num in ticks):
 
             ticks.append(candidate)
     

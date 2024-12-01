@@ -87,6 +87,9 @@ U, ticks = generate_input(input_dim=M[1].shape[0],
                           triggers=True, 
                           nb_triggers=nb_triggers,
                           trigger_length=trigger_length)
+
+print(ticks)
+
 # ********** #
 # Simulation #
 # ********** #

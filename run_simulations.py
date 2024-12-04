@@ -56,7 +56,7 @@ def run_grid_search():
     modes = ["stdp", "gp", "stdp-gp"]                 # 3 modes
     input_lengths = [1001]                            # fixed
     trigger_lengths = [50]                            # fixed
-    nb_triggers = [10]                                # fixed
+    nb_triggers = [5] # [10]                                # fixed
     seeds = [42, 79, 82, 83, 47, 49, 13, 77, 55, 15]  # 10 seeds
     temperatures = [10.0]                             # fixed
     cooling_rates = [0.995]                           # fixed

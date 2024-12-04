@@ -51,7 +51,7 @@ temperature = args.temperature
 cooling_rate = args.cooling_rate
 eta = args.eta
 plumb = args.plumb
-bounds = [float(x.replace("minus", "-")) for x in args.bounds.split(",")]  # string -> tuple of floats # XXX
+bounds = [float(x.replace("minus", "-")) for x in args.bounds.split(",")]  # string -> tuple of floats
 noise = args.noise
 
 # Set random seed
@@ -181,7 +181,7 @@ if __name__ == "__main__":
             U_b1 = dict([(k, v) for k, v in U.items() if k in b1])
 
             # GP (input block prefix)
-            print("GP in process...")
+            print(f"GP in process..(temparture: {temperature})")
             A = M[0].copy() # dummy var for checking syn. change
             sim = simulated_annealing(initial_solution=M, 
                                       func=attractor_energy, 
@@ -195,7 +195,7 @@ if __name__ == "__main__":
             best_energies, temps, M = sim
 
             # best_energy = max(best_energies)
-            temperature = temps[-1]
+            # temperature = temps[-1]  # if commented, temperature reset at every new input block XXX
             best_energies = list(-np.array(best_energies))
             nb_attractors.extend(best_energies)
 
@@ -218,7 +218,7 @@ if __name__ == "__main__":
                                               epoch=len(b1),  # b1 steps
                                               stdp=[M[0], eta, plumb, bounds])
 
-            attrs = get_nb_attractors(synapses, M)[1:] # XXX # first already computed in previous step
+            attrs = get_nb_attractors(synapses, M)[1:] # first already computed in previous step
             nb_attractors.extend(attrs)
 
             synapses = [synapses[:, :, i] for i in range(synapses.shape[2])]

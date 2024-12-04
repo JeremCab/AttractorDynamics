@@ -1,6 +1,11 @@
 import subprocess
 import itertools
 from tqdm import tqdm
+import os
+
+
+# set current dir to script folder
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
 def run_simulation(mode, input_length, trigger_length, nb_triggers,  seed, 

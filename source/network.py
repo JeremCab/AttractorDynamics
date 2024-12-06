@@ -134,7 +134,7 @@ def generate_ticks(count=20, pattern_length=20, input_length=1000):
     ticks = []
     
     # avoid tick generation if sequence is too short
-    flag = (input_length > 2 * count * pattern_length) # 2 is arbitrary...
+    flag = (input_length > 1.25 * count * pattern_length) # 1.25 is arbitrary...
 
     while flag and len(ticks) < count:
         

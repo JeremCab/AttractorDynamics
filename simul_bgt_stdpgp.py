@@ -62,10 +62,7 @@ cwd = os.getcwd()
 results_folder = "runs"
 results_folder = os.path.join(cwd, results_folder)
 
-if mode == "stdp" or mode == "gp":
-    results_file = f"sim_{mode}_{input_length}_seed{seed}.pkl"
-elif mode == "stdp-gp":
-    results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"
+results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"
 
 results_file = os.path.join(results_folder, results_file)
 
@@ -88,7 +85,7 @@ U, ticks = generate_input(input_dim=M[1].shape[0],
                           nb_triggers=nb_triggers,
                           trigger_length=trigger_length)
 
-print(ticks)
+print("ticks:", ticks)
 
 # ********** #
 # Simulation #

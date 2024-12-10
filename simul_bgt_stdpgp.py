@@ -62,7 +62,8 @@ cwd = os.getcwd()
 results_folder = "runs"
 results_folder = os.path.join(cwd, results_folder)
 
-results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"
+# results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"  # XXX
+results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}_eta{eta}.pkl"
 
 results_file = os.path.join(results_folder, results_file)
 

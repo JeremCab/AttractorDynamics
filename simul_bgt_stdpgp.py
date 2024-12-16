@@ -76,6 +76,8 @@ network = (input_nodes_N, nodes_N, edges_N)
 M = net_to_matrix(network)
 # Apply random distortion to weight matrix M[0]
 # distort(M[0], noise=noise)
+M_init = M.copy()
+
 
 # Input
 U, ticks = generate_input(input_dim=M[1].shape[0], 
@@ -195,6 +197,10 @@ if __name__ == "__main__":
             # best_energy = max(best_energies)
             # temperature = temps[-1]  # if commented, temperature reset at every new input block XXX
             best_energies = list(-np.array(best_energies))
+            # save best sol. for further analysis
+            if max(best_energies) > max(nb_attractors):
+                with open(os.path.join(results_folder, "M_best.pkl"), "wb") as fh:
+                    pickle.dump(M, fh)
             nb_attractors.extend(best_energies)
 
             synapses = [A]*(len(b0) - 1) + [M[0]]
@@ -214,7 +220,7 @@ if __name__ == "__main__":
             history, synapses, M = simulation(M[0], M[1], M[2], M[3], M[4], 
                                               U_b1,
                                               epoch=len(b1),  # b1 steps
-                                              stdp=[M[0], eta, plumb, bounds])
+                                              stdp=[M_init[0], eta, plumb, bounds]) # XXX M_init[0] instead of M[0]
 
             attrs = get_nb_attractors(synapses, M)[1:] # first already computed in previous step
             nb_attractors.extend(attrs)

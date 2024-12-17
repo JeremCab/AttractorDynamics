@@ -62,8 +62,8 @@ cwd = os.getcwd()
 results_folder = "runs"
 results_folder = os.path.join(cwd, results_folder)
 
-# results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"  # XXX
-results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}_eta{eta}.pkl"
+results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"  #
+# results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}_eta{eta}.pkl"
 
 results_file = os.path.join(results_folder, results_file)
 
@@ -198,9 +198,12 @@ if __name__ == "__main__":
             # temperature = temps[-1]  # if commented, temperature reset at every new input block XXX
             best_energies = list(-np.array(best_energies))
             # save best sol. for further analysis
-            if max(best_energies) > max(nb_attractors):
+
+            if max(best_energies) >= max(nb_attractors):
+                eta /= 2  # adaptive learning rate XXX
                 with open(os.path.join(results_folder, "M_best.pkl"), "wb") as fh:
                     pickle.dump(M, fh)
+
             nb_attractors.extend(best_energies)
 
             synapses = [A]*(len(b0) - 1) + [M[0]]

@@ -182,7 +182,7 @@ def simulation(A, B1, B2, b, x, U, epoch=100, stdp="off"):
     dim = B1.shape[0] + x.shape[0]                        # Calculate state space dimension
     history = np.zeros([dim, epoch])                      # Initialize history with dummy states
     synapses = np.zeros([x.shape[0], x.shape[0], epoch])  # Initialize synapses with dummy states
-    # synapses[:, :, 0] = A # xxx old
+    # synapses[:, :, 0] = A                               # xxx old
     synapses = np.zeros([A.shape[0], A.shape[1], epoch])  # xxx new 
 
     for i in range(epoch):

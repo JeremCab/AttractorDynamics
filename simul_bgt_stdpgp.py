@@ -37,6 +37,7 @@ parser.add_argument("--plumb", type=float, default=1.0, help="STDP plumb value. 
 parser.add_argument("--bounds", type=str, default="-0.4999,1.4999", 
                     help="STDP bounds as a string. Default is 'minus0.4999,1.4999' ('-' sign causes problems).")
 parser.add_argument("--noise", type=float, default=0.3, help="Noise for SA. Default is 0.3.")
+parser.add_argument("--network", type=str, default="bgt", help="Type of network: bgt (basal-ganglia thalamocortical) or random.")
 
 # Parse the arguments
 args = parser.parse_args()
@@ -53,6 +54,7 @@ eta = args.eta
 plumb = args.plumb
 bounds = [float(x.replace("minus", "-")) for x in args.bounds.split(",")]  # string -> tuple of floats
 noise = args.noise
+network_type = args.network
 
 # Set random seed
 np.random.seed(seed)
@@ -62,8 +64,8 @@ cwd = os.getcwd()
 results_folder = "runs"
 results_folder = os.path.join(cwd, results_folder)
 
-results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"  #
-# results_file = f"sim_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}_eta{eta}.pkl"
+# results_file = f"sim_{network_type}_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}.pkl"  #
+results_file = f"sim_{network_type}_{mode}_{input_length}_{trigger_length}_{nb_triggers}_seed{seed}_eta{eta}.pkl"
 
 results_file = os.path.join(results_folder, results_file)
 
@@ -72,8 +74,25 @@ results_file = os.path.join(results_folder, results_file)
 # ************** #
 
 # BGT Network
-network = (input_nodes_N, nodes_N, edges_N)
+if network_type == "bgt":
+    network = (input_nodes_N, nodes_N, edges_N)
+
+# Random network (4 internal nodes)
+elif network_type == "random":
+    network = generate_network(nb_inputs=1, 
+                               nb_nodes=4, 
+                               nb_internal_connections=12, 
+                               mode="full") # fully connected
+
+print("Network generated.")
+print(network[0])
+print(network[1])
+print(network[2], len(network[2]))
+
 M = net_to_matrix(network)
+print(M[0])
+print(M[1])
+print(M[2])
 # Apply random distortion to weight matrix M[0]
 # distort(M[0], noise=noise)
 M_init = M.copy()
@@ -88,7 +107,7 @@ U, ticks = generate_input(input_dim=M[1].shape[0],
                           nb_triggers=nb_triggers,
                           trigger_length=trigger_length)
 
-print("ticks:", ticks)
+print("Input generated. Ticks:", ticks)
 
 # ********** #
 # Simulation #
@@ -200,7 +219,7 @@ if __name__ == "__main__":
             # save best sol. for further analysis
 
             if max(best_energies) >= max(nb_attractors):
-                eta /= 2  # adaptive learning rate XXX
+                # eta /= 2  # adaptive learning rate XXX
                 with open(os.path.join(results_folder, "M_best.pkl"), "wb") as fh:
                     pickle.dump(M, fh)
 

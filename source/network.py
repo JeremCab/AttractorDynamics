@@ -223,25 +223,36 @@ def generate_input(input_dim=1, input_length=300, mode="random", lamda=5, trigge
 # Generating a Network #
 # ******************** #
 
-def generate_network(nb_inputs: int, nb_nodes: int, nb_input_connections: int = 5, nb_internal_connections: int = 30) -> tuple[list[int], list[int], list[tuple[tuple[int, int], float]]]:
+def generate_network(nb_inputs: int, nb_nodes: int, nb_internal_connections: int = 3, mode="full") -> tuple[list[int], list[int], list[tuple[tuple[int, int], float]]]:
     """Generate a random Boolean network with input and internal connections."""
     input_nodes = list(range(nb_inputs))
     internal_nodes = list(range(nb_inputs, nb_inputs + nb_nodes))
     edges = []
 
-    def create_edges(nb_connections: int, src_range: tuple[int, int], dest_range: tuple[int, int]):
-        """Helper to add edges between nodes in specified ranges."""
-        count = 0
-        while count < nb_connections:
-            src = np.random.randint(*src_range)
-            dest = np.random.randint(*dest_range)
-            if (src, dest) not in [e[0] for e in edges]:  
-                weight = np.random.normal(np.random.choice([-1.5, 1.5]), 0.5)
-                edges.append(((src, dest), weight))
-                count += 1
+    weights_input = np.random.normal(0, 1, size=(nb_inputs, nb_nodes))
+    weights_internal = np.random.normal(0, 1, size=(nb_nodes, nb_nodes))
 
-    create_edges(nb_input_connections, (0, nb_inputs), (nb_inputs, nb_inputs + nb_nodes))
-    create_edges(nb_internal_connections, (nb_inputs, nb_inputs + nb_nodes), (nb_inputs, nb_inputs + nb_nodes))
+    if mode == "custom":
+
+        tmp_0 = np.zeros(shape=(nb_nodes**2 - nb_internal_connections))
+        tmp_1 = np.ones(shape=(nb_internal_connections))
+        mask = np.concatenate([tmp_0, tmp_1])
+        np.random.shuffle(mask)
+        mask = mask.reshape(nb_nodes, nb_nodes)
+
+        weights_internal *= mask
+
+    elif mode not in ["full", "custom"]:
+        raise Exception("Invalid mode for network generation.") from BaseException
+    
+    for i in range(nb_inputs + nb_nodes):
+        for j in range(nb_inputs, nb_inputs + + nb_nodes):
+            j2 = j - nb_inputs
+            if i < nb_inputs:
+                edges.append([(i, j), weights_input[i, j2]])
+            else:
+                i2 = i - nb_inputs
+                edges.append([(i, j), weights_internal[i2, j2]])
 
     return input_nodes, internal_nodes, edges
 

@@ -37,7 +37,7 @@ parser.add_argument("--plumb", type=float, default=1.0, help="STDP plumb value. 
 parser.add_argument("--bounds", type=str, default="-0.4999,1.4999", 
                     help="STDP bounds as a string. Default is 'minus0.4999,1.4999' ('-' sign causes problems).")
 parser.add_argument("--noise", type=float, default=0.3, help="Noise for SA. Default is 0.3.")
-parser.add_argument("--network", type=str, default="bgt", help="Type of network: bgt (basal-ganglia thalamocortical) or random.")
+parser.add_argument("--network", type=str, default="random", help="Type of network: bgt (basal-ganglia thalamocortical) or random.")
 
 # Parse the arguments
 args = parser.parse_args()
@@ -80,23 +80,17 @@ if network_type == "bgt":
 # Random network (4 internal nodes)
 elif network_type == "random":
     network = generate_network(nb_inputs=1, 
-                               nb_nodes=4, 
-                               nb_internal_connections=12, 
+                               nb_nodes=8, # 4
+                               #nb_internal_connections=12, 
                                mode="full") # fully connected
 
 print("Network generated.")
-print(network[0])
-print(network[1])
-print(network[2], len(network[2]))
 
 M = net_to_matrix(network)
-print(M[0])
-print(M[1])
-print(M[2])
 # Apply random distortion to weight matrix M[0]
 # distort(M[0], noise=noise)
 M_init = M.copy()
-
+# print(M_init)
 
 # Input
 U, ticks = generate_input(input_dim=M[1].shape[0], 

@@ -55,10 +55,10 @@ def run_grid_search():
     """
 
     # Define parameter grids
-    modes = ["stdp-gp"] # ["stdp", "gp", "stdp-gp"]                 # 3 modes
+    modes = ["stdp", "gp", "stdp-gp"]                 # 3 modes
     input_lengths = [1001]                            # fixed
     trigger_lengths = [50]                            # fixed
-    nb_triggers = [1, 3, 5, 7, 9, 11] # [10]          # several triggers
+    nb_triggers = [0] # [1, 3, 5, 7, 9, 11] # [10]          # several triggers
     seeds = [42, 79, 82, 83, 47, 49, 13, 77, 55, 15]  # 10 seeds
     temperatures = [10.0]                             # fixed
     cooling_rates = [0.995]                           # fixed

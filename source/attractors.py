@@ -287,7 +287,7 @@ def get_current_largest_attractor(matrices):
 def get_nb_attractors(synapses, M):
     """
     Get successive max number of attractors 
-    of a network given in matricial form  M,
+    of a network given in matricial form M,
     whose synaptic weights have changed over time 
     and are stored into the tensor synapses.
     """

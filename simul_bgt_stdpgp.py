@@ -80,7 +80,7 @@ if network_type == "bgt":
 # Random network (4 internal nodes)
 elif network_type == "random":
     network = generate_network(nb_inputs=1, 
-                               nb_nodes=8, # 4
+                               nb_nodes=7, # 4
                                #nb_internal_connections=12, 
                                mode="full") # fully connected
 

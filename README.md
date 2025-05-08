@@ -8,5 +8,5 @@ Tbd
 
 ## Code
 
-- The file `simulation.py` runs a simulation. It can be configured with several parameters.
+- The file `run_simulations.py` run simulations. It can be configured with several parameters.
 - The source file are contained in `/source/`.

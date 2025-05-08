@@ -11,12 +11,12 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 def run_simulation(mode, input_length, trigger_length, nb_triggers,  seed, 
                    temperature, cooling_rate, eta, plumb, bounds, noise):
     """
-    Runs the `simul_bgt_stdpgp.py` script with the specified parameters.
+    Runs the `simul_stdpgp.py` script with the specified parameters.
     """
     
     # Construct the command
     cmd = [
-        "python", "simul_bgt_stdpgp.py",
+        "python", "simul_stdpgp.py",
         "--mode", mode,
         "--seed", str(seed),
         "--input_length", str(input_length),

@@ -11,12 +11,12 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 def run_simulation(mode, input_length, trigger_length, nb_triggers,  seed, 
                    temperature, cooling_rate, eta, plumb, bounds, noise, network):
     """
-    Runs the `simul_bgt_stdpgp.py` script with the specified parameters.
+    Runs the `simul_stdpgp.py` script with the specified parameters.
     """
     
     # Construct the command
     cmd = [
-        "python", "simul_bgt_stdpgp.py",
+        "python", "simul_stdpgp.py",
         "--mode", mode,
         "--seed", str(seed),
         "--input_length", str(input_length),
@@ -55,7 +55,7 @@ def run_grid_search():
     """
 
     # Define parameter grids
-    modes = ["stdp", "gp", "stdp-gp"]                 # 3 modes
+    modes = ["stdp", "gp", "stdp-gp"]                 # 3 modes "stdp", "gp", "stdp-gp"
     input_lengths = [1001]                            # fixed
     trigger_lengths = [50]                            # fixed
     nb_triggers = [0, 1, 3, 5, 7, 9] #[0, 1, 3, 5, 7, 9, 11] #         # several triggers
